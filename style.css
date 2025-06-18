@@ -10,11 +10,14 @@ body {
 
 /* Main terminal window container */
 .terminal {
+    width: 95vw;
+    max-width: 420px;
+    min-width: 260px;
+    margin: 0 auto;
     background: #c0c0c0;
-    border: 2px solid #fff;
+    border: 2px solid #888;
     border-radius: 12px;
     box-shadow: 0 0 24px #0008;
-    width: 700px;
     min-height: 500px;
     padding: 0 0 24px 0;
     position: relative;
@@ -28,6 +31,17 @@ body {
 @keyframes flicker {
     0%, 100% { filter: brightness(1); }
     50% { filter: brightness(0.97); }
+}
+
+@media (max-width: 500px) {
+    .terminal {
+        max-width: 98vw;
+        padding: 0 2vw 16px 2vw;
+    }
+    .file-grid {
+        right: 8px;
+        top: 16px;
+    }
 }
 
 /* Terminal header/title bar */
