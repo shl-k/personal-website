@@ -1,0 +1,382 @@
+/* Base styles for the entire page */
+body {
+    background: #000;
+    min-height: 100vh;
+    margin: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Main terminal window container */
+.terminal {
+    background: #c0c0c0;
+    border: 2px solid #fff;
+    border-radius: 12px;
+    box-shadow: 0 0 24px #0008;
+    width: 700px;
+    min-height: 500px;
+    padding: 0 0 24px 0;
+    position: relative;
+    /* Pixel grid effect */
+    background-image: repeating-linear-gradient(0deg, #b0b0b0 0px, #b0b0b0 1px, transparent 1px, transparent 4px),
+                      repeating-linear-gradient(90deg, #b0b0b0 0px, #b0b0b0 1px, transparent 1px, transparent 4px);
+    animation: flicker 1.5s infinite steps(2, end);
+    font-family: 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;
+}
+
+@keyframes flicker {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(0.97); }
+}
+
+/* Terminal header/title bar */
+.terminal-header {
+    background: #e0e0e0;
+    border-bottom: 1px solid #888;
+    padding: 6px 12px;
+    font-family: inherit;
+    font-size: 16px;
+    color: #222;
+    border-radius: 10px 10px 0 0;
+    margin: 0 0 24px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.menu-bar {
+    display: none;
+}
+
+.window-info {
+    display: flex;
+    gap: 18px;
+    font-size: 14px;
+    color: #444;
+    font-family: 'VT323', 'IBM Plex Mono', 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;
+    align-items: center;
+}
+
+.window-content {
+    padding: 0 32px;
+    font-family: inherit;
+}
+
+/* Terminal title text */
+.terminal-title {
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+/* Command line styling */
+.command {
+    margin: 10px 0;  /* Space above and below commands */
+}
+
+/* Command prompt symbol ($) */
+.prompt {
+    color: #00ff00;  /* Green color */
+    margin-right: 10px;  /* Space between $ and command */
+}
+
+/* Command text styling */
+.command-text {
+    color: #fff;  /* White text for commands */
+}
+
+/* Container for list of files */
+.file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 48px;
+}
+
+/* Individual file entry */
+.file {
+    display: flex;
+    align-items: center;
+    font-size: 18px;
+    color: #222;
+    font-family: inherit;
+    padding-left: 8px;
+}
+
+/* File icon spacing */
+.file-icon {
+    margin-right: 10px;
+    font-size: 22px;
+}
+
+/* Special styling for LinkedIn icon */
+.file:first-child .file-icon {
+    background-color: #00ff00;  /* Green background */
+    color: #000;  /* Black text */
+    padding: 0 2px;  /* Add some padding */
+    border: 1px solid #00ff00;  /* Green border */
+}
+
+/* Clickable file name styling */
+.file-name {
+    color: #222;
+    text-decoration: none;
+    transition: text-decoration 0.2s;
+    font-family: inherit;
+}
+
+/* File name hover effect */
+.file-name:hover {
+    text-decoration: underline;
+}
+
+/* Container for file contents */
+.file-content {
+    margin: 32px 0 0 0;
+    padding: 16px;
+    border: 1px solid #bbb;
+    background: #eaeaea;
+    border-radius: 6px;
+    font-family: inherit;
+    color: #222;
+    font-size: 16px;
+}
+
+/* Paragraph text in file content */
+.file-content p {
+    margin: 5px 0;
+}
+
+/* Blinking cursor effect after command text */
+.command-text::after {
+    content: '█';  /* Block character for cursor */
+    animation: blink 1s infinite;  /* Make it blink */
+}
+
+/* Animation for blinking cursor */
+@keyframes blink {
+    50% { opacity: 0; }  /* Make cursor invisible half the time */
+}
+
+/* Header styles */
+header {
+    margin-bottom: 3rem;
+    border-bottom: 2px solid #ff8c42;
+    padding-bottom: 1rem;
+}
+
+h1 {
+    color: #ff8c42;
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+header p {
+    color: #666;
+    font-size: 1.2rem;
+    margin: 0;
+}
+
+/* Section styles */
+section {
+    margin-bottom: 2.5rem;
+}
+
+h2 {
+    color: #ff8c42;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+p {
+    color: #444;
+    margin-bottom: 1rem;
+}
+
+/* List styles */
+ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+li {
+    margin-bottom: 0.8rem;
+    padding-left: 1.5rem;
+    position: relative;
+}
+
+li:before {
+    content: "•";
+    color: #ff8c42;
+    position: absolute;
+    left: 0;
+}
+
+strong {
+    color: #ff8c42;
+}
+
+/* Footer styles */
+footer {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid #ddd;
+    color: #666;
+}
+
+.file-grid {
+    position: absolute;
+    top: 48px;
+    right: 48px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 18px;
+    margin: 0;
+    height: auto;
+    z-index: 2;
+}
+
+.desktop-file {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.desktop-link {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-decoration: none;
+}
+
+.desktop-link:visited,
+.desktop-link:active {
+    text-decoration: none;
+}
+
+.desktop-link:hover .desktop-label {
+    background: #e0e0e0;
+    color: #000;
+    text-decoration: underline;
+}
+
+.desktop-label {
+    background: #fff;
+    color: #222;
+    font-family: 'VT323', 'IBM Plex Mono', 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;
+    font-size: 13px;
+    font-weight: bold;
+    padding: 1px 7px 1px 7px;
+    margin-top: 0;
+    text-align: center;
+    text-decoration: none;
+    box-shadow: 1px 1px 0 #bbb;
+    letter-spacing: 0.5px;
+    transition: background 0.2s, color 0.2s, text-decoration 0.2s;
+    min-width: 70px;
+    max-width: 120px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Popup window styles */
+.popup-window {
+    display: none;
+    position: absolute;
+    min-width: 220px;
+    max-width: 300px;
+    min-height: 80px;
+    background: #e0e0e0;
+    border: 2px solid #888;
+    border-radius: 8px;
+    box-shadow: 2px 2px 8px #2228;
+    z-index: 100;
+    font-family: 'VT323', 'IBM Plex Mono', 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;
+    font-size: 16px;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.25s cubic-bezier(.4,0,.2,1);
+}
+
+.popup-window.active {
+    display: block;
+    opacity: 1;
+    pointer-events: auto;
+    animation: popup-fade-in 0.25s cubic-bezier(.4,0,.2,1);
+}
+
+.popup-header {
+    background: #d0d0d0;
+    border-bottom: 1px solid #888;
+    padding: 4px 10px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    font-size: 13px;
+    font-family: inherit;
+    font-weight: bold;
+    cursor: move;
+    position: relative;
+}
+
+.popup-close {
+    background: #b0b0b0;
+    border: 1.5px solid #888;
+    border-radius: 50%;
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    color: transparent;
+    margin-right: 10px;
+    margin-left: 0;
+    order: 0;
+    padding: 0;
+    line-height: 1;
+    box-shadow: 0 1px 2px #8882;
+    position: relative;
+}
+
+.popup-close:after {
+    content: '';
+}
+
+.popup-close:hover {
+    background: #888;
+    border-color: #666;
+}
+
+.popup-header span {
+    flex: 1;
+    text-align: center;
+    order: 1;
+}
+
+.popup-content {
+    padding: 18px 18px 12px 18px;
+    font-family: inherit;
+    color: #222;
+    font-size: 11px;
+}
+
+.retro-title {
+    font-family: 'VT323', 'IBM Plex Mono', 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;
+    font-size: 16px;
+    font-weight: bold;
+    color: #222;
+    letter-spacing: 1px;
+    margin-right: 18px;
+    margin-left: 2px;
+    user-select: none;
+    align-self: flex-start;
+}
+  

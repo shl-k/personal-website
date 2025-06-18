@@ -1,0 +1,75 @@
+<!DOCTYPE html>  <!-- Declares this is an HTML5 document -->
+<html lang="en">  <!-- Root element, specifies English language -->
+<head>  <!-- Contains metadata and links to external resources -->
+  <meta charset="UTF-8" />  <!-- Specifies character encoding for all languages -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />  <!-- Makes site mobile-friendly -->
+  <title>Shlok Patel</title>  <!-- Shows in browser tab -->
+  <link rel="stylesheet" type="text/css" href="./style.css" />  <!-- Links to our CSS file -->
+</head>
+<body>  <!-- Main content container -->
+  <div class="terminal">  <!-- Main window container -->
+    <div class="terminal-header">  <!-- Window title bar -->
+      <div class="retro-title">sdp's site</div>
+      <div class="menu-bar">
+      </div>
+      <div class="window-info">
+        <span id="date-time" class="retro-label"></span>
+      </div>
+    </div>
+    <div class="window-content">  <!-- Main content area -->
+      <div class="file-grid">
+        <!-- LinkedIn file -->
+        <div class="desktop-file">
+          <a href="https://www.linkedin.com/in/shlokdpatel/" class="desktop-link" target="_blank" rel="noopener noreferrer">
+            <span class="desktop-icon"> 
+              <svg width="32" height="32" viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="2" fill="#fff" stroke="#222" stroke-width="2"/><rect x="10" y="8" width="12" height="2" fill="#bbb"/><rect x="10" y="12" width="12" height="2" fill="#bbb"/><rect x="10" y="16" width="8" height="2" fill="#bbb"/></svg>
+            </span>
+            <span class="desktop-label">linkedin</span>
+          </a>
+        </div>
+        <!-- About file -->
+        <div class="desktop-file">
+          <a href="#" class="desktop-link" id="about-link">
+            <span class="desktop-icon">
+              <svg width="32" height="32" viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="2" fill="#fff" stroke="#222" stroke-width="2"/><rect x="10" y="8" width="12" height="2" fill="#bbb"/><rect x="10" y="12" width="12" height="2" fill="#bbb"/><rect x="10" y="16" width="8" height="2" fill="#bbb"/></svg>
+            </span>
+            <span class="desktop-label">about.txt</span>
+          </a>
+        </div>
+        <!-- Contact file -->
+        <div class="desktop-file">
+          <a href="#" class="desktop-link" id="contact-link">
+            <span class="desktop-icon">
+              <svg width="32" height="32" viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="2" fill="#fff" stroke="#222" stroke-width="2"/><rect x="10" y="8" width="12" height="2" fill="#bbb"/><rect x="10" y="12" width="12" height="2" fill="#bbb"/><rect x="10" y="16" width="8" height="2" fill="#bbb"/></svg>
+            </span>
+            <span class="desktop-label">contact.txt</span>
+          </a>
+        </div>
+      </div>
+      <!-- Pop-up windows -->
+      <div class="popup-window" id="contact-popup">
+        <div class="popup-header">
+          <span>contact.txt</span>
+          <button class="popup-close" id="close-contact">×</button>
+        </div>
+        <div class="popup-content">
+          <p>+1 (201) 989-2183</p>
+          <p>shlokdhavalpatel@gmail.com</p>
+        </div>
+      </div>
+      <div class="popup-window" id="about-popup">
+        <div class="popup-header">
+          <span>about.txt</span>
+          <button class="popup-close" id="close-about">×</button>
+        </div>
+        <div class="popup-content">
+          <p>My life's mission to become the world's best VC.</p>
+          <p> I figure it'll take me until 2050 to get there.  But we'll do our best to speed that up.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="script.js"></script>  <!-- Links to JavaScript file for interactivity -->
+</body>
+</html>
+
