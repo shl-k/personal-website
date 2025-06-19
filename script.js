@@ -61,51 +61,55 @@ window.addEventListener('DOMContentLoaded', () => {
     // Improved drag and drop for popups with boundary constraints
     function makeDraggable(popup) {
         const hdr = popup.querySelector('.popup-header');
-        let offsetX = 0, offsetY = 0;
-        let mouseMoveHandler, mouseUpHandler;
-
-        hdr.addEventListener('mousedown', function(e) {
-            if (e.target.classList.contains('popup-close')) return; // Don't drag if clicking the close button
-            e.preventDefault();
-
-            // get bounding rects
-            const termRect   = terminal.getBoundingClientRect();
-            const headerRect = header.getBoundingClientRect();
-            const popupRect  = popup.getBoundingClientRect();
-            const fileGridRect = fileGrid.getBoundingClientRect();
-
-            // initial click offsets
-            offsetX = e.clientX - popupRect.left;
-            offsetY = e.clientY - popupRect.top;
-            document.body.style.userSelect = 'none';
-
-            // compute movement bounds relative to terminal
-            const minX = 0;
-            const maxX = termRect.width - popupRect.width;
-            // ensure popup stays below header: use header bottom relative to terminal top
-            const minY = headerRect.bottom - termRect.top;
-            const maxY = termRect.height - popupRect.height;
-
-            mouseMoveHandler = function(e) {
-                // raw coords relative to terminal
-                let x = e.clientX - offsetX - termRect.left;
-                let y = e.clientY - offsetY - termRect.top;
-                // clamp within bounds
-                x = Math.max(minX, Math.min(x, maxX));
-                y = Math.max(minY, Math.min(y, maxY));
-                popup.style.position = 'absolute';
-                popup.style.left     = x + 'px';
-                popup.style.top      = y + 'px';
-            };
-            mouseUpHandler = function() {
-                document.removeEventListener('mousemove', mouseMoveHandler);
-                document.removeEventListener('mouseup',   mouseUpHandler);
-                document.body.style.userSelect = '';
-            };
-            document.addEventListener('mousemove', mouseMoveHandler);
-            document.addEventListener('mouseup',   mouseUpHandler);
+      
+        hdr.addEventListener('pointerdown', (e) => {
+          if (e.target.classList.contains('popup-close')) return;
+          e.preventDefault();
+      
+          const termRect   = terminal.getBoundingClientRect();
+          const headerRect = header.getBoundingClientRect();
+          const startX     = e.clientX;
+          const startY     = e.clientY;
+          const rect       = popup.getBoundingClientRect();
+          const initLeft   = rect.left - termRect.left;
+          const initTop    = rect.top  - termRect.top;
+      
+          document.body.style.userSelect = 'none';
+          hdr.setPointerCapture(e.pointerId);
+      
+          function onPointerMove(e) {
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            let newLeft = initLeft + dx;
+            let newTop  = initTop  + dy;
+      
+            // desktop clamp
+            if (window.innerWidth > 500) {
+              const minX = 0;
+              const maxX = termRect.width  - rect.width;
+              const minY = headerRect.bottom - termRect.top;
+              const maxY = termRect.height - rect.height;
+      
+              newLeft = Math.max(minX, Math.min(newLeft, maxX));
+              newTop  = Math.max(minY, Math.min(newTop, maxY));
+            }
+      
+            popup.style.left = `${newLeft}px`;
+            popup.style.top  = `${newTop}px`;
+          }
+      
+          function onPointerUp(e) {
+            document.body.style.userSelect = '';
+            hdr.releasePointerCapture(e.pointerId);
+            document.removeEventListener('pointermove', onPointerMove);
+            document.removeEventListener('pointerup',   onPointerUp);
+          }
+      
+          document.addEventListener('pointermove', onPointerMove);
+          document.addEventListener('pointerup',   onPointerUp);
         });
-    }
+      }
+      
 
     makeDraggable(popups.contact);
     makeDraggable(popups.about);
