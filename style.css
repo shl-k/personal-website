@@ -70,8 +70,8 @@ body {
     
     .terminal-header {
         position: relative;
-        left: -1vw;
-        width: calc(100% + 2vw);
+        left: 0;
+        width: 100%;
         padding: 4px 8px;
         font-size: 14px;
         margin: 0 0 16px 0;
