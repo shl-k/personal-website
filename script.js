@@ -97,21 +97,22 @@ window.addEventListener('DOMContentLoaded', () => {
             const dy = e.clientY - startY;
             let newLeft = initLeft + dx;
             let newTop  = initTop  + dy;
-      
-            // desktop clamp
-            if (window.innerWidth > 500) {
-              const minX = 0;
-              const maxX = termRect.width  - rect.width;
-              const minY = headerRect.bottom - termRect.top;
-              const maxY = termRect.height - rect.height;
-      
-              newLeft = Math.max(minX, Math.min(newLeft, maxX));
-              newTop  = Math.max(minY, Math.min(newTop, maxY));
-            }
-      
+          
+            // uniform inset on all sides
+            const PADDING = 20;  // tweak as needed
+          
+            const minX = PADDING;
+            const maxX = termRect.width  - rect.width  - PADDING;
+            const minY = (headerRect.bottom - termRect.top) + PADDING;
+            const maxY = termRect.height - rect.height - PADDING;
+          
+            newLeft = Math.max(minX, Math.min(newLeft, maxX));
+            newTop  = Math.max(minY, Math.min(newTop, maxY));
+          
             popup.style.left = `${newLeft}px`;
             popup.style.top  = `${newTop}px`;
           }
+          
       
           function onPointerUp(e) {
             document.body.style.userSelect = '';
