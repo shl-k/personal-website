@@ -59,8 +59,8 @@ body {
     .terminal {
         width: 95vw;
         max-width: 95vw;
-        min-height: 80vh;
-        max-height: 90vh;
+        min-height: 60vh;
+        max-height: 70vh;
         padding: 0 8px 12px 8px;
         margin: 10px auto;
         background-image:
