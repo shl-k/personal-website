@@ -56,6 +56,21 @@ window.addEventListener('DOMContentLoaded', () => {
                 bringToFront(popup);
             }
         });
+        
+        // Bring popup to front when clicking/touching the popup content area
+        const content = popup.querySelector('.popup-content');
+        
+        // Desktop mouse events
+        content.addEventListener('mousedown', function(e) {
+            e.stopPropagation();
+            bringToFront(popup);
+        });
+        
+        // Mobile touch events
+        content.addEventListener('touchstart', function(e) {
+            e.stopPropagation();
+            bringToFront(popup);
+        }, { passive: true });
     });
 
     // Improved drag and drop for popups with boundary constraints

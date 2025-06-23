@@ -33,7 +33,8 @@ body {
     50% { filter: brightness(0.97); }
 }
 
-@media (max-width: 500px) {
+/* Mobile landscape mode */
+@media (max-width: 500px) and (orientation: landscape) {
     .terminal {
         width: 90vw;
         max-width: 98vw;
@@ -50,6 +51,90 @@ body {
     .file-grid {
         right: 8px;
         top: 16px;
+    }
+}
+
+/* Mobile portrait mode */
+@media (max-width: 500px) and (orientation: portrait) {
+    .terminal {
+        width: 95vw;
+        max-width: 95vw;
+        min-height: 80vh;
+        max-height: 90vh;
+        padding: 0 1vw 12px;
+        margin: 10px auto;
+        background-image:
+            repeating-linear-gradient(0deg, #b0b0b0 0, #b0b0b0 1px, transparent 1px, transparent 3px),
+            repeating-linear-gradient(90deg, #b0b0b0 0, #b0b0b0 1px, transparent 1px, transparent 3px);
+    }
+    
+    .terminal-header {
+        position: relative;
+        left: -1vw;
+        width: calc(100% + 2vw);
+        padding: 4px 8px;
+        font-size: 14px;
+        margin: 0 0 16px 0;
+    }
+    
+    .window-content {
+        padding: 0 16px;
+    }
+    
+    .file-grid {
+        right: 4px;
+        top: 12px;
+        gap: 12px;
+    }
+    
+    .desktop-label {
+        font-size: 11px;
+        padding: 1px 5px;
+        min-width: 60px;
+        max-width: 100px;
+    }
+    
+    .file-list {
+        margin-top: 32px;
+        gap: 14px;
+    }
+    
+    .file {
+        font-size: 16px;
+    }
+    
+    .file-icon {
+        font-size: 20px;
+        margin-right: 8px;
+    }
+    
+    .popup-window {
+        min-width: 200px;
+        max-width: 280px;
+        font-size: 14px;
+    }
+    
+    .popup-content {
+        padding: 14px 14px 10px 14px;
+        font-size: 10px;
+    }
+    
+    .popup-header {
+        padding: 3px 8px;
+        font-size: 12px;
+    }
+    
+    .retro-title {
+        font-size: 14px;
+        margin-right: 14px;
+    }
+}
+
+/* General mobile styles (both orientations) */
+@media (max-width: 500px) {
+    body {
+        padding: 10px 0;
+        min-height: auto;
     }
 }
 
@@ -401,5 +486,26 @@ footer {
     margin-left: 2px;
     user-select: none;
     align-self: flex-start;
+}
+
+/* Contact link styling */
+.contact-link {
+    color: #222;
+    text-decoration: none;
+    font-family: inherit;
+    transition: color 0.2s, text-decoration 0.2s;
+}
+
+.contact-link:hover {
+    color: #444;
+    text-decoration: underline;
+}
+
+.contact-link:visited {
+    color: #222;
+}
+
+.contact-link:active {
+    color: #666;
 }
   
