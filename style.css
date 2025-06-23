@@ -61,7 +61,7 @@ body {
         max-width: 95vw;
         min-height: 80vh;
         max-height: 90vh;
-        padding: 0 0 12px 0;
+        padding: 0 8px 12px 8px;
         margin: 10px auto;
         background-image:
             repeating-linear-gradient(0deg, #b0b0b0 0, #b0b0b0 1px, transparent 1px, transparent 3px),
@@ -70,15 +70,13 @@ body {
     
     .terminal-header {
         position: relative;
-        left: 0;
-        width: 100%;
         padding: 4px 8px;
         font-size: 14px;
         margin: 0 0 16px 0;
     }
     
     .window-content {
-        padding: 0 8px;
+        padding: 0;
     }
     
     .file-grid {
