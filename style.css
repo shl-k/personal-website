@@ -72,7 +72,7 @@ body {
         position: relative;
         left: 0;
         width: calc(95vw - 16px);
-        padding: 4px 8px;
+        padding: 4px 0px;
         font-size: 14px;
         margin: 0 0 16px 0;
     }
