@@ -61,9 +61,9 @@ body {
         margin: 10px auto;
     }
     .terminal-header {
-        width: 100%;
         padding: 4px 8px;
         margin: 0 0 16px 0;
+        box-sizing: border-box; /* include padding in its width */
     }
     .window-content {
         padding: 0 8px;
