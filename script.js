@@ -145,5 +145,49 @@ window.addEventListener('DOMContentLoaded', () => {
 
     makeDraggable(popups.contact);  // Make contact popup draggable
     makeDraggable(popups.about);    // Make about popup draggable
+
+    // Blur effect for external links
+    let blurTimeout;  // Timeout for delayed blur effect
+    const externalLinks = document.querySelectorAll('.desktop-link[href*="calendly"], .desktop-link[href*="linkedin"], .desktop-link[href*="paragonpatents"], .desktop-link[href*="psv.vc"]');
+    const allFiles = document.querySelectorAll('.desktop-file');
+
+    // Function to apply blur effect
+    function applyBlurEffect(hoveredFile) {
+        allFiles.forEach(file => {
+            if (file !== hoveredFile) {
+                file.style.filter = 'blur(2px) brightness(0.5)';
+                file.style.opacity = '0.4';
+            }
+        });
+    }
+
+    // Function to remove blur effect
+    function removeBlurEffect() {
+        allFiles.forEach(file => {
+            file.style.filter = '';
+            file.style.opacity = '';
+        });
+    }
+
+    // Add hover listeners to external links
+    externalLinks.forEach(link => {
+        const fileContainer = link.closest('.desktop-file');
+        
+        link.addEventListener('mouseenter', () => {
+            // Clear any existing timeout
+            clearTimeout(blurTimeout);
+            
+            // Set timeout for 0.5 second delay
+            blurTimeout = setTimeout(() => {
+                applyBlurEffect(fileContainer);
+            }, 300);
+        });
+
+        link.addEventListener('mouseleave', () => {
+            // Clear timeout and remove blur immediately
+            clearTimeout(blurTimeout);
+            removeBlurEffect();
+        });
+    });
 });
   

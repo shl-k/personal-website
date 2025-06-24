@@ -452,6 +452,48 @@ footer {
     transition: transform 0.2s ease, filter 0.2s ease;  /* Smooth transitions for hover effects */
 }
 
+/* Tooltip container for external links */
+.desktop-link[href*="calendly"],
+.desktop-link[href*="linkedin"],
+.desktop-link[href*="paragonpatents"],
+.desktop-link[href*="psv.vc"] {
+    position: relative;  /* For positioning tooltips */
+}
+
+/* Tooltip styling */
+.desktop-link[href*="calendly"]::after,
+.desktop-link[href*="linkedin"]::after,
+.desktop-link[href*="paragonpatents"]::after,
+.desktop-link[href*="psv.vc"]::after {
+    content: attr(data-tooltip);  /* Get tooltip text from data attribute */
+    position: absolute;  /* Position absolutely */
+    top: -40px;  /* Position above the file */
+    left: -20px;  /* Position to the left */
+    transform: translateX(-50%);  /* Center the tooltip */
+    background: #222;  /* Dark background */
+    color: #fff;  /* White text */
+    padding: 6px 10px;  /* Internal padding */
+    border-radius: 4px;  /* Rounded corners */
+    font-size: 11px;  /* Small font size */
+    font-family: 'VT323', 'IBM Plex Mono', 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;  /* Retro terminal fonts */
+    white-space: pre-line;  /* Allow line breaks with \A */
+    opacity: 0;  /* Start invisible */
+    visibility: hidden;  /* Hidden by default */
+    transition: opacity 0.3s ease, visibility 0.3s ease;  /* Smooth fade in/out */
+    z-index: 1000;  /* High z-index to appear above other elements */
+    box-shadow: 0 2px 8px #0006;  /* Subtle shadow */
+    border: 1px solid #444;  /* Subtle border */
+}
+
+/* Show tooltip on hover */
+.desktop-link[href*="calendly"]:hover::after,
+.desktop-link[href*="linkedin"]:hover::after,
+.desktop-link[href*="paragonpatents"]:hover::after,
+.desktop-link[href*="psv.vc"]:hover::after {
+    opacity: 1;  /* Make visible */
+    visibility: visible;  /* Show tooltip */
+}
+
 /* Popup window styles - for modal windows that appear when clicking files */
 .popup-window {
     display: none;  /* Hidden by default */
