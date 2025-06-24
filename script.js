@@ -1,133 +1,149 @@
 // script.js
 // Updated: constrain popups within the gray ".terminal" area, staying below the header
 
-// 1. Date/time updater
+// 1. Date/time updater - updates the clock in the terminal header
 function updateDateTime() {
-    const now = new Date();
-    const hours = now.getHours();
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const ampm = hours >= 12 ? 'PM' : 'AM';
-    const hour12 = hours % 12 === 0 ? 12 : hours % 12;
-    const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const el = document.getElementById('date-time');
-    if (el) el.textContent = `${hour12}:${minutes}${ampm} - ${dateStr}`;
+    const now = new Date();  // Get current date and time
+    const hours = now.getHours();  // Extract hours (0-23)
+    const minutes = now.getMinutes().toString().padStart(2, '0');  // Extract minutes, pad with leading zero
+    const ampm = hours >= 12 ? 'PM' : 'AM';  // Determine AM/PM
+    const hour12 = hours % 12 === 0 ? 12 : hours % 12;  // Convert to 12-hour format
+    const dateStr = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });  // Format date
+    const el = document.getElementById('date-time');  // Get the date-time element
+    if (el) el.textContent = `${hour12}:${minutes}${ampm} - ${dateStr}`;  // Update the display
 }
-setInterval(updateDateTime, 1000);
-updateDateTime();
+setInterval(updateDateTime, 1000);  // Update every second
+updateDateTime();  // Initial update
 
 window.addEventListener('DOMContentLoaded', () => {
+    // Get references to all important DOM elements
     const links = {
-        contact: document.getElementById('contact-link'),
-        about:   document.getElementById('about-link')
+        contact: document.getElementById('contact-link'),  // Contact file link
+        about:   document.getElementById('about-link')     // About file link
     };
     const popups = {
-        contact: document.getElementById('contact-popup'),
-        about:   document.getElementById('about-popup')
+        contact: document.getElementById('contact-popup'),  // Contact popup window
+        about:   document.getElementById('about-popup')     // About popup window
     };
     const closes = {
-        contact: document.getElementById('close-contact'),
-        about:   document.getElementById('close-about')
+        contact: document.getElementById('close-contact'),  // Contact close button
+        about:   document.getElementById('close-about')     // About close button
     };
-    const terminal = document.querySelector('.terminal');
-    const header   = document.querySelector('.terminal-header');
-    const fileGrid = document.querySelector('.file-grid');
+    const terminal = document.querySelector('.terminal');  // Main terminal container
+    const header   = document.querySelector('.terminal-header');  // Terminal header
+    const fileGrid = document.querySelector('.file-grid');  // File grid container
 
-    let zCounter = 200;
+    let zCounter = 200;  // Z-index counter for layering popups
     function bringToFront(popup) {
-        zCounter++;
-        popup.style.zIndex = zCounter;
+        zCounter++;  // Increment z-index
+        popup.style.zIndex = zCounter;  // Bring popup to front
     }
 
+    // Function to open popup windows at fixed position
     function openPopup(popup) {
-        popup.style.left = '60px';
-        popup.style.top = '120px';
-        popup.classList.add('active');
-        bringToFront(popup);
+        popup.style.left = '60px';  // Set horizontal position
+        popup.style.top = '120px';  // Set vertical position
+        popup.classList.add('active');  // Show the popup
+        bringToFront(popup);  // Bring popup to front
     }
-    links.contact.onclick = e => { e.preventDefault(); openPopup(popups.contact); };
-    links.about  .onclick = e => { e.preventDefault(); openPopup(popups.about);   };
-    closes.contact.onclick = () => popups.contact.classList.remove('active');
-    closes.about  .onclick = () => popups.about  .classList.remove('active');
+    
+    // Event handlers for opening popups
+    links.contact.onclick = e => { 
+        e.preventDefault();  // Prevent default link behavior
+        openPopup(popups.contact);  // Open contact popup
+    };
+    links.about.onclick = e => { 
+        e.preventDefault();  // Prevent default link behavior
+        openPopup(popups.about);  // Open about popup
+    };
+    
+    // Event handlers for closing popups
+    closes.contact.onclick = () => popups.contact.classList.remove('active');  // Hide contact popup
+    closes.about.onclick = () => popups.about.classList.remove('active');  // Hide about popup
 
-    // Bring popup to front when header is clicked (for drag)
+    // Bring popup to front when header is clicked (for drag functionality)
     [popups.contact, popups.about].forEach(popup => {
         popup.querySelector('.popup-header').addEventListener('mousedown', function(e) {
-            if (!e.target.classList.contains('popup-close')) {
-                bringToFront(popup);
+            if (!e.target.classList.contains('popup-close')) {  // Don't bring to front if clicking close button
+                bringToFront(popup);  // Bring popup to front
             }
         });
         
         // Bring popup to front when clicking/touching the popup content area
-        const content = popup.querySelector('.popup-content');
+        const content = popup.querySelector('.popup-content');  // Get content area
         
         // Desktop mouse events
         content.addEventListener('mousedown', function(e) {
-            e.stopPropagation();
-            bringToFront(popup);
+            e.stopPropagation();  // Prevent event bubbling
+            bringToFront(popup);  // Bring popup to front
         });
         
         // Mobile touch events
         content.addEventListener('touchstart', function(e) {
-            e.stopPropagation();
-            bringToFront(popup);
-        }, { passive: true });
+            e.stopPropagation();  // Prevent event bubbling
+            bringToFront(popup);  // Bring popup to front
+        }, { passive: true });  // Passive listener for better performance
     });
 
     // Improved drag and drop for popups with boundary constraints
     function makeDraggable(popup) {
-        const hdr = popup.querySelector('.popup-header');
+        const hdr = popup.querySelector('.popup-header');  // Get the header element for dragging
       
         hdr.addEventListener('pointerdown', (e) => {
-          if (e.target.classList.contains('popup-close')) return;
-          e.preventDefault();
+          if (e.target.classList.contains('popup-close')) return;  // Don't drag if clicking close button
+          e.preventDefault();  // Prevent default behavior
       
-          const termRect   = terminal.getBoundingClientRect();
-          const headerRect = header.getBoundingClientRect();
-          const startX     = e.clientX;
-          const startY     = e.clientY;
-          const rect       = popup.getBoundingClientRect();
-          const initLeft   = rect.left - termRect.left;
-          const initTop    = rect.top  - termRect.top;
+          // Get bounding rectangles for boundary calculations
+          const termRect   = terminal.getBoundingClientRect();  // Terminal boundaries
+          const headerRect = header.getBoundingClientRect();    // Header boundaries
+          const startX     = e.clientX;  // Initial mouse X position
+          const startY     = e.clientY;  // Initial mouse Y position
+          const rect       = popup.getBoundingClientRect();     // Popup boundaries
+          const initLeft   = rect.left - termRect.left;        // Initial left position relative to terminal
+          const initTop    = rect.top  - termRect.top;         // Initial top position relative to terminal
       
-          document.body.style.userSelect = 'none';
-          hdr.setPointerCapture(e.pointerId);
+          document.body.style.userSelect = 'none';  // Prevent text selection during drag
+          hdr.setPointerCapture(e.pointerId);  // Capture pointer for consistent tracking
       
           function onPointerMove(e) {
-            const dx = e.clientX - startX;
-            const dy = e.clientY - startY;
-            let newLeft = initLeft + dx;
-            let newTop  = initTop  + dy;
+            const dx = e.clientX - startX;  // Calculate X movement
+            const dy = e.clientY - startY;  // Calculate Y movement
+            let newLeft = initLeft + dx;    // New left position
+            let newTop  = initTop  + dy;    // New top position
           
-            // uniform inset on all sides
-            const PADDING = 5;  // tweak as needed
+            // Uniform inset on all sides for boundary padding
+            const PADDING = 5;  // Padding from edges
           
-            const minX = PADDING;
-            const maxX = termRect.width  - rect.width  - PADDING;
-            const minY = (headerRect.bottom - termRect.top) + PADDING;
-            const maxY = termRect.height - rect.height - PADDING;
+            // Calculate boundary limits
+            const minX = PADDING;  // Minimum X position
+            const maxX = termRect.width  - rect.width  - PADDING;  // Maximum X position
+            const minY = (headerRect.bottom - termRect.top) + PADDING;  // Minimum Y position (below header)
+            const maxY = termRect.height - rect.height - PADDING;  // Maximum Y position
           
-            newLeft = Math.max(minX, Math.min(newLeft, maxX));
-            newTop  = Math.max(minY, Math.min(newTop, maxY));
+            // Constrain to boundaries
+            newLeft = Math.max(minX, Math.min(newLeft, maxX));  // Clamp X position
+            newTop  = Math.max(minY, Math.min(newTop, maxY));   // Clamp Y position
           
-            popup.style.left = `${newLeft}px`;
-            popup.style.top  = `${newTop}px`;
+            // Apply new position
+            popup.style.left = `${newLeft}px`;  // Set left position
+            popup.style.top  = `${newTop}px`;   // Set top position
           }
           
       
           function onPointerUp(e) {
-            document.body.style.userSelect = '';
-            hdr.releasePointerCapture(e.pointerId);
-            document.removeEventListener('pointermove', onPointerMove);
-            document.removeEventListener('pointerup',   onPointerUp);
+            document.body.style.userSelect = '';  // Re-enable text selection
+            hdr.releasePointerCapture(e.pointerId);  // Release pointer capture
+            document.removeEventListener('pointermove', onPointerMove);  // Remove move listener
+            document.removeEventListener('pointerup',   onPointerUp);    // Remove up listener
           }
       
-          document.addEventListener('pointermove', onPointerMove);
-          document.addEventListener('pointerup',   onPointerUp);
+          document.addEventListener('pointermove', onPointerMove);  // Add move listener
+          document.addEventListener('pointerup',   onPointerUp);    // Add up listener
         });
       }
       
 
-    makeDraggable(popups.contact);
-    makeDraggable(popups.about);
+    makeDraggable(popups.contact);  // Make contact popup draggable
+    makeDraggable(popups.about);    // Make about popup draggable
 });
   

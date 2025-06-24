@@ -3,90 +3,90 @@
 <head>  <!-- Contains metadata and links to external resources -->
   <meta charset="UTF-8" />  <!-- Specifies character encoding for all languages -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />  <!-- Makes site mobile-friendly -->
-  <title>sdp's site</title>  <!-- Shows in browser tab -->
+  <title>Shlok D. Patel - Builder, Investor, Curious Human</title>  <!-- Shows in browser tab -->
   <link rel="stylesheet" type="text/css" href="./style.css" />  <!-- Links to our CSS file -->
 </head>
 <body>  <!-- Main content container -->
-  <div class="terminal">  <!-- Main window container -->
-    <div class="terminal-header">  <!-- Window title bar -->
-      <div class="retro-title">sdp's site</div>
-      <div class="menu-bar">
+  <div class="terminal">  <!-- Main window container - styled like a retro Mac terminal -->
+    <div class="terminal-header">  <!-- Window title bar - contains title and date/time -->
+      <div class="retro-title">sdp's site</div>  <!-- Site title in retro font -->
+      <div class="menu-bar">  <!-- Menu bar container (currently empty) -->
       </div>
-      <div class="window-info">
-        <span id="date-time" class="retro-label"></span>
+      <div class="window-info">  <!-- Container for date/time display -->
+        <span id="date-time" class="retro-label"></span>  <!-- Date/time will be populated by JavaScript -->
       </div>
     </div>
-    <div class="window-content">  <!-- Main content area -->
-      <div class="file-grid">
-        <div class="file-col file-col-left">
-          <!-- About file -->
-          <div class="desktop-file">
-            <a href="#" class="desktop-link" id="about-link">
-              <span class="desktop-icon">
-                <svg width="32" height="32" viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="2" fill="#fff" stroke="#222" stroke-width="2"/><rect x="10" y="8" width="12" height="2" fill="#bbb"/><rect x="10" y="12" width="12" height="2" fill="#bbb"/><rect x="10" y="16" width="8" height="2" fill="#bbb"/></svg>
+    <div class="window-content">  <!-- Main content area - contains file icons and popups -->
+      <div class="file-grid">  <!-- Grid container for organizing file icons -->
+        <div class="file-col file-col-left">  <!-- Left column of file icons -->
+          <!-- About file icon and link -->
+          <div class="desktop-file">  <!-- Container for individual file -->
+            <a href="#" class="desktop-link" id="about-link">  <!-- Clickable link for about file -->
+              <span class="desktop-icon">  <!-- Icon container -->
+                <svg width="32" height="32" viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="2" fill="#fff" stroke="#222" stroke-width="2"/><rect x="10" y="8" width="12" height="2" fill="#bbb"/><rect x="10" y="12" width="12" height="2" fill="#bbb"/><rect x="10" y="16" width="8" height="2" fill="#bbb"/></svg>  <!-- SVG icon representing a text file -->
               </span>
-              <span class="desktop-label">about.txt</span>
+              <span class="desktop-label">about.txt</span>  <!-- File name label -->
             </a>
           </div>
-          <!-- Contact file -->
-          <div class="desktop-file">
-            <a href="#" class="desktop-link" id="contact-link">
-              <span class="desktop-icon">
-                <svg width="32" height="32" viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="2" fill="#fff" stroke="#222" stroke-width="2"/><rect x="10" y="8" width="12" height="2" fill="#bbb"/><rect x="10" y="12" width="12" height="2" fill="#bbb"/><rect x="10" y="16" width="8" height="2" fill="#bbb"/></svg>
+          <!-- Contact file icon and link -->
+          <div class="desktop-file">  <!-- Container for individual file -->
+            <a href="#" class="desktop-link" id="contact-link">  <!-- Clickable link for contact file -->
+              <span class="desktop-icon">  <!-- Icon container -->
+                <svg width="32" height="32" viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="2" fill="#fff" stroke="#222" stroke-width="2"/><rect x="10" y="8" width="12" height="2" fill="#bbb"/><rect x="10" y="12" width="12" height="2" fill="#bbb"/><rect x="10" y="16" width="8" height="2" fill="#bbb"/></svg>  <!-- SVG icon representing a text file -->
               </span>
-              <span class="desktop-label">contact.txt</span>
-            </a>
-          </div>
-        </div>
-        <div class="file-col file-col-right">
-          <!-- Calendly file -->
-          <div class="desktop-file">
-            <a href="https://calendly.com/shlokdhavalpatel/30min" class="desktop-link" target="_blank" rel="noopener noreferrer">
-              <span class="desktop-icon"> 
-                <svg width="32" height="32" viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="2" fill="#fff" stroke="#222" stroke-width="2"/><rect x="10" y="8" width="12" height="2" fill="#bbb"/><rect x="10" y="12" width="12" height="2" fill="#bbb"/><rect x="10" y="16" width="8" height="2" fill="#bbb"/></svg>
-              </span>
-              <span class="desktop-label">calendly</span>
-            </a>
-          </div>
-          <!-- LinkedIn file -->
-          <div class="desktop-file">
-            <a href="https://www.linkedin.com/in/shlokdpatel/" class="desktop-link" target="_blank" rel="noopener noreferrer">
-              <span class="desktop-icon"> 
-                <svg width="32" height="32" viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="2" fill="#fff" stroke="#222" stroke-width="2"/><rect x="10" y="8" width="12" height="2" fill="#bbb"/><rect x="10" y="12" width="12" height="2" fill="#bbb"/><rect x="10" y="16" width="8" height="2" fill="#bbb"/></svg>
-              </span>
-              <span class="desktop-label">linkedin</span>
-            </a>
-          </div>
-          <!-- Paragon file -->
-          <div class="desktop-file">
-            <a href="https://paragonpatents.com/" class="desktop-link" target="_blank" rel="noopener noreferrer">
-              <span class="desktop-icon"> 
-                <svg width="32" height="32" viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="2" fill="#fff" stroke="#222" stroke-width="2"/><rect x="10" y="8" width="12" height="2" fill="#bbb"/><rect x="10" y="12" width="12" height="2" fill="#bbb"/><rect x="10" y="16" width="8" height="2" fill="#bbb"/></svg>
-              </span>
-              <span class="desktop-label">paragon</span>
+              <span class="desktop-label">contact.txt</span>  <!-- File name label -->
             </a>
           </div>
         </div>
-      </div>
-      <!-- Pop-up windows -->
-      <div class="popup-window" id="contact-popup">
-        <div class="popup-header">
-          <span>contact.txt</span>
-          <button class="popup-close" id="close-contact">×</button>
-        </div>
-        <div class="popup-content">
-          <p><a href="sms:+12019892183" class="contact-link">+1 (201) 989-2183</a></p>
-          <p><a href="mailto:shlokdhavalpatel@gmail.com" class="contact-link">shlokdhavalpatel@gmail.com</a></p>
+        <div class="file-col file-col-right">  <!-- Right column of file icons -->
+          <!-- Calendly file icon and link -->
+          <div class="desktop-file">  <!-- Container for individual file -->
+            <a href="https://calendly.com/shlokdhavalpatel/30min" class="desktop-link" target="_blank" rel="noopener noreferrer">  <!-- External link to Calendly -->
+              <span class="desktop-icon">  <!-- Icon container -->
+                <svg width="32" height="32" viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="2" fill="#fff" stroke="#222" stroke-width="2"/><rect x="10" y="8" width="12" height="2" fill="#bbb"/><rect x="10" y="12" width="12" height="2" fill="#bbb"/><rect x="10" y="16" width="8" height="2" fill="#bbb"/></svg>  <!-- SVG icon representing a text file -->
+              </span>
+              <span class="desktop-label">calendly</span>  <!-- File name label -->
+            </a>
+          </div>
+          <!-- LinkedIn file icon and link -->
+          <div class="desktop-file">  <!-- Container for individual file -->
+            <a href="https://www.linkedin.com/in/shlokdpatel/" class="desktop-link" target="_blank" rel="noopener noreferrer">  <!-- External link to LinkedIn -->
+              <span class="desktop-icon">  <!-- Icon container -->
+                <svg width="32" height="32" viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="2" fill="#fff" stroke="#222" stroke-width="2"/><rect x="10" y="8" width="12" height="2" fill="#bbb"/><rect x="10" y="12" width="12" height="2" fill="#bbb"/><rect x="10" y="16" width="8" height="2" fill="#bbb"/></svg>  <!-- SVG icon representing a text file -->
+              </span>
+              <span class="desktop-label">linkedin</span>  <!-- File name label -->
+            </a>
+          </div>
+          <!-- Paragon file icon and link -->
+          <div class="desktop-file">  <!-- Container for individual file -->
+            <a href="https://paragonpatents.com/" class="desktop-link" target="_blank" rel="noopener noreferrer">  <!-- External link to Paragon -->
+              <span class="desktop-icon">  <!-- Icon container -->
+                <svg width="32" height="32" viewBox="0 0 32 32"><rect x="6" y="4" width="20" height="24" rx="2" fill="#fff" stroke="#222" stroke-width="2"/><rect x="10" y="8" width="12" height="2" fill="#bbb"/><rect x="10" y="12" width="12" height="2" fill="#bbb"/><rect x="10" y="16" width="8" height="2" fill="#bbb"/></svg>  <!-- SVG icon representing a text file -->
+              </span>
+              <span class="desktop-label">paragon</span>  <!-- File name label -->
+            </a>
+          </div>
         </div>
       </div>
-      <div class="popup-window" id="about-popup">
-        <div class="popup-header">
-          <button class="popup-close" id="close-about"></button>
-          <span>about.txt</span>
+      <!-- Pop-up windows - initially hidden, shown when file icons are clicked -->
+      <div class="popup-window" id="contact-popup">  <!-- Contact information popup -->
+        <div class="popup-header">  <!-- Popup title bar -->
+          <span>contact.txt</span>  <!-- Popup title -->
+          <button class="popup-close" id="close-contact">×</button>  <!-- Close button -->
         </div>
-        <div class="popup-content">
-          <p>My life's purpose is rooted in the service of others - I'm obsessed with entrepreneurship, optimization, and leadership.<p>
-            <p>I love meeting new people and learning from them. Reach out and say hello :-)</p>
+        <div class="popup-content">  <!-- Popup content area -->
+          <p><a href="sms:+12019892183" class="contact-link">+1 (201) 989-2183</a></p>  <!-- Phone number link -->
+          <p><a href="mailto:shlokdhavalpatel@gmail.com" class="contact-link">shlokdhavalpatel@gmail.com</a></p>  <!-- Email link -->
+        </div>
+      </div>
+      <div class="popup-window" id="about-popup">  <!-- About information popup -->
+        <div class="popup-header">  <!-- Popup title bar -->
+          <button class="popup-close" id="close-about"></button>  <!-- Close button (styled as circle) -->
+          <span>about.txt</span>  <!-- Popup title -->
+        </div>
+        <div class="popup-content">  <!-- Popup content area -->
+          <p>My life's purpose is rooted in the service of others - I'm obsessed with entrepreneurship, optimization, and leadership.<p>  <!-- First paragraph -->
+            <p>I love meeting new people and learning from them. Reach out and say hello :-)</p>  <!-- Second paragraph -->
         </div>
       </div>
     </div>

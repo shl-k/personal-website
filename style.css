@@ -1,177 +1,178 @@
 /* Base styles for the entire page */
 body {
-    background: #000;
-    min-height: 100vh;
-    margin: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background: #000;  /* Black background for the entire page */
+    min-height: 100vh;  /* Minimum height of 100% viewport height */
+    margin: 0;  /* Remove default margins */
+    display: flex;  /* Use flexbox for centering */
+    justify-content: center;  /* Center horizontally */
+    align-items: center;  /* Center vertically */
 }
 
 /* Main terminal window container */
 .terminal {
-    width: 700px;
-    max-width: 98vw;
-    min-width: 260px;
-    margin: 0 auto;
-    background: #c0c0c0;
-    border: 2px solid #888;
-    border-radius: 12px;
-    box-shadow: 0 0 24px #0008;
-    min-height: 500px;
-    padding: 0 0 24px 0;
-    position: relative;
-    /* Pixel grid effect */
+    width: 700px;  /* Fixed width for desktop */
+    max-width: 98vw;  /* Maximum width of 98% viewport width */
+    min-width: 260px;  /* Minimum width to prevent too narrow windows */
+    margin: 0 auto;  /* Center the terminal horizontally */
+    background: #c0c0c0;  /* Classic Mac gray background */
+    border: 2px solid #888;  /* Dark gray border */
+    border-radius: 12px;  /* Rounded corners */
+    box-shadow: 0 0 24px #0008;  /* Drop shadow with 50% opacity black */
+    min-height: 500px;  /* Minimum height */
+    padding: 0 0 24px 0;  /* Bottom padding only */
+    position: relative;  /* For positioning child elements */
+    /* Pixel grid effect - creates a subtle scanline pattern */
     background-image: repeating-linear-gradient(0deg, #b0b0b0 0px, #b0b0b0 1px, transparent 1px, transparent 4px),
                       repeating-linear-gradient(90deg, #b0b0b0 0px, #b0b0b0 1px, transparent 1px, transparent 4px);
-    animation: flicker 1.5s infinite steps(2, end);
-    font-family: 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;
+    animation: flicker 1.5s infinite steps(2, end);  /* CRT flicker effect */
+    font-family: 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;  /* Retro terminal fonts */
 }
 
+/* CRT flicker animation - simulates old monitor flickering */
 @keyframes flicker {
-    0%, 100% { filter: brightness(1); }
-    50% { filter: brightness(0.97); }
+    0%, 100% { filter: brightness(1); }  /* Normal brightness */
+    50% { filter: brightness(0.97); }    /* Slightly dimmed */
 }
 
-/* Mobile landscape mode */
+/* Mobile landscape mode - adjust terminal for landscape orientation */
 @media (max-width: 500px) and (orientation: landscape) {
     .terminal {
-        width: 90vw;
-        max-width: 98vw;
-        padding: 0 2vw 16px;
+        width: 90vw;  /* Use 90% of viewport width */
+        max-width: 98vw;  /* Maximum 98% viewport width */
+        padding: 0 2vw 16px;  /* Horizontal padding, reduced bottom padding */
         background-image:
             repeating-linear-gradient(0deg, #b0b0b0 0, #b0b0b0 1px, transparent 1px, transparent 3px),
             repeating-linear-gradient(90deg, #b0b0b0 0, #b0b0b0 1px, transparent 1px, transparent 3px);
     }
     .terminal-header {
-        position: relative;
-        left: -2vw;
-        width: calc(100% + 4vw);
+        position: relative;  /* Relative positioning */
+        left: -2vw;  /* Shift left to compensate for padding */
+        width: calc(100% + 4vw);  /* Expand width to fill */
     }
     .file-grid {
-        right: 8px;
-        top: 16px;
+        right: 8px;  /* Position from right edge */
+        top: 16px;   /* Position from top */
     }
 }
 
-/* Mobile portrait mode */
+/* Mobile portrait mode - adjust terminal for portrait orientation */
 @media (max-width: 500px) and (orientation: portrait) {
     .terminal {
-        padding: 0 0 12px;
-        margin: 10px auto;
+        padding: 0 0 12px;  /* Reduced bottom padding */
+        margin: 10px auto;  /* Add top/bottom margin */
     }
     .terminal-header {
-        padding: 4px 8px;
-        margin: 0 0 16px 0;
-        box-sizing: border-box; /* include padding in its width */
+        padding: 4px 8px;  /* Reduced padding */
+        margin: 0 0 16px 0;  /* Bottom margin */
+        box-sizing: border-box;  /* Include padding in width calculation */
     }
     .window-content {
-        padding: 0 8px;
+        padding: 0 8px;  /* Reduced horizontal padding */
     }
     .file-grid {
-        right: 4px;
-        top: 12px;
-        gap: 12px;
+        right: 4px;  /* Closer to right edge */
+        top: 12px;   /* Closer to top */
+        gap: 12px;   /* Reduced gap between files */
     }
     
     .desktop-label {
-        font-size: 11px;
-        padding: 1px 5px;
-        min-width: 60px;
-        max-width: 100px;
+        font-size: 11px;  /* Smaller font size */
+        padding: 1px 5px;  /* Reduced padding */
+        min-width: 60px;   /* Minimum width */
+        max-width: 100px;  /* Maximum width */
     }
     
     .file-list {
-        margin-top: 32px;
-        gap: 14px;
+        margin-top: 32px;  /* Reduced top margin */
+        gap: 14px;         /* Reduced gap */
     }
     
     .file {
-        font-size: 16px;
+        font-size: 16px;  /* Smaller font size */
     }
     
     .file-icon {
-        font-size: 20px;
-        margin-right: 8px;
+        font-size: 20px;  /* Smaller icon size */
+        margin-right: 8px;  /* Reduced margin */
     }
     
     .popup-window {
-        min-width: 200px;
-        max-width: 280px;
-        font-size: 14px;
+        min-width: 200px;  /* Minimum popup width */
+        max-width: 280px;  /* Maximum popup width */
+        font-size: 14px;   /* Smaller font size */
     }
     
     .popup-content {
-        padding: 14px 14px 10px 14px;
-        font-size: 10px;
+        padding: 14px 14px 10px 14px;  /* Adjusted padding */
+        font-size: 10px;  /* Smaller font size */
     }
     
     .popup-header {
-        padding: 3px 8px;
-        font-size: 12px;
+        padding: 3px 8px;  /* Reduced padding */
+        font-size: 12px;   /* Smaller font size */
     }
     
     .retro-title {
-        font-size: 14px;
-        margin-right: 14px;
+        font-size: 14px;  /* Smaller title font */
+        margin-right: 14px;  /* Reduced margin */
     }
 }
 
-/* General mobile styles (both orientations) */
+/* General mobile styles - apply to all mobile devices */
 @media (max-width: 500px) {
     body {
-        padding: 0;
-        min-height: 100vh;
+        padding: 0;  /* Remove body padding */
+        min-height: 100vh;  /* Full viewport height */
     }
 }
 
-/* Terminal header/title bar */
+/* Terminal header/title bar styling */
 .terminal-header {
-    background: #e0e0e0;
-    border-bottom: 1px solid #888;
-    padding: 4px 8px;
-    font-family: inherit;
-    font-size: 16px;
-    color: #222;
-    border-radius: 10px 10px 0 0;
-    margin: 0 0 16px 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    background: #e0e0e0;  /* Light gray background */
+    border-bottom: 1px solid #888;  /* Bottom border */
+    padding: 4px 8px;  /* Internal padding */
+    font-family: inherit;  /* Inherit font from parent */
+    font-size: 16px;  /* Font size */
+    color: #222;  /* Dark gray text */
+    border-radius: 10px 10px 0 0;  /* Rounded top corners only */
+    margin: 0 0 16px 0;  /* Bottom margin */
+    display: flex;  /* Use flexbox layout */
+    justify-content: space-between;  /* Space items apart */
+    align-items: center;  /* Center items vertically */
 }
 
 .menu-bar {
-    display: none;
+    display: none;  /* Hide menu bar for now */
 }
 
 .window-info {
-    display: flex;
-    gap: 18px;
-    font-size: 14px;
-    color: #444;
-    font-family: 'VT323', 'IBM Plex Mono', 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;
-    align-items: center;
+    display: flex;  /* Use flexbox layout */
+    gap: 18px;  /* Space between elements */
+    font-size: 14px;  /* Smaller font size */
+    color: #444;  /* Medium gray text */
+    font-family: 'VT323', 'IBM Plex Mono', 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;  /* Retro terminal fonts */
+    align-items: center;  /* Center items vertically */
 }
 
 .window-content {
-    padding: 0 32px;
-    font-family: inherit;
+    padding: 0 32px;  /* Horizontal padding */
+    font-family: inherit;  /* Inherit font from parent */
 }
 
-/* Terminal title text */
+/* Terminal title text styling */
 .terminal-title {
-    font-weight: bold;
-    letter-spacing: 1px;
+    font-weight: bold;  /* Bold text */
+    letter-spacing: 1px;  /* Space between letters */
 }
 
 /* Command line styling */
 .command {
-    margin: 10px 0;  /* Space above and below commands */
+    margin: 10px 0;  /* Vertical spacing around commands */
 }
 
-/* Command prompt symbol ($) */
+/* Command prompt symbol ($) styling */
 .prompt {
-    color: #00ff00;  /* Green color */
+    color: #00ff00;  /* Green color for prompt */
     margin-right: 10px;  /* Space between $ and command */
 }
 
@@ -182,29 +183,29 @@ body {
 
 /* Container for list of files */
 .file-list {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
-    margin-top: 48px;
+    display: flex;  /* Use flexbox layout */
+    flex-direction: column;  /* Stack items vertically */
+    gap: 18px;  /* Space between files */
+    margin-top: 48px;  /* Top margin */
 }
 
-/* Individual file entry */
+/* Individual file entry styling */
 .file {
-    display: flex;
-    align-items: center;
-    font-size: 18px;
-    color: #222;
-    font-family: inherit;
-    padding-left: 8px;
+    display: flex;  /* Use flexbox layout */
+    align-items: center;  /* Center items vertically */
+    font-size: 18px;  /* Font size */
+    color: #222;  /* Dark gray text */
+    font-family: inherit;  /* Inherit font from parent */
+    padding-left: 8px;  /* Left padding */
 }
 
-/* File icon spacing */
+/* File icon spacing - adds space between icon and text */
 .file-icon {
-    margin-right: 10px;
-    font-size: 22px;
+    margin-right: 10px;  /* Space to the right of the icon */
+    font-size: 22px;     /* Icon size */
 }
 
-/* Special styling for LinkedIn icon */
+/* Special styling for LinkedIn icon - gives it a distinctive green background */
 .file:first-child .file-icon {
     background-color: #00ff00;  /* Green background */
     color: #000;  /* Black text */
@@ -212,322 +213,378 @@ body {
     border: 1px solid #00ff00;  /* Green border */
 }
 
-/* Clickable file name styling */
+/* Clickable file name styling - makes file names look like links */
 .file-name {
-    color: #222;
-    text-decoration: none;
-    transition: text-decoration 0.2s;
-    font-family: inherit;
+    color: #222;  /* Dark gray text */
+    text-decoration: none;  /* No underline by default */
+    transition: text-decoration 0.2s;  /* Smooth transition for hover effects */
+    font-family: inherit;  /* Inherit font from parent */
 }
 
-/* File name hover effect */
+/* File name hover effect - adds underline when hovering */
 .file-name:hover {
-    text-decoration: underline;
+    text-decoration: underline;  /* Show underline on hover */
 }
 
-/* Container for file contents */
+/* Container for file contents - styles the content area of files */
 .file-content {
-    margin: 32px 0 0 0;
-    padding: 16px;
-    border: 1px solid #bbb;
-    background: #eaeaea;
-    border-radius: 6px;
-    font-family: inherit;
-    color: #222;
-    font-size: 16px;
+    margin: 32px 0 0 0;  /* Top margin only */
+    padding: 16px;  /* Internal padding */
+    border: 1px solid #bbb;  /* Light gray border */
+    background: #eaeaea;  /* Light gray background */
+    border-radius: 6px;  /* Rounded corners */
+    font-family: inherit;  /* Inherit font from parent */
+    color: #222;  /* Dark gray text */
+    font-size: 16px;  /* Font size */
 }
 
-/* Paragraph text in file content */
+/* Paragraph text in file content - spacing between paragraphs */
 .file-content p {
-    margin: 5px 0;
+    margin: 5px 0;  /* Vertical spacing around paragraphs */
 }
 
-/* Blinking cursor effect after command text */
+/* Blinking cursor effect after command text - simulates terminal cursor */
 .command-text::after {
     content: '█';  /* Block character for cursor */
-    animation: blink 1s infinite;  /* Make it blink */
+    animation: blink 1s infinite;  /* Make it blink continuously */
 }
 
-/* Animation for blinking cursor */
+/* Animation for blinking cursor - makes cursor fade in and out */
 @keyframes blink {
     50% { opacity: 0; }  /* Make cursor invisible half the time */
 }
 
-/* Header styles */
+/* Header styles - for the main page header */
 header {
-    margin-bottom: 3rem;
-    border-bottom: 2px solid #ff8c42;
-    padding-bottom: 1rem;
+    margin-bottom: 3rem;  /* Bottom margin */
+    border-bottom: 2px solid #ff8c42;  /* Orange bottom border */
+    padding-bottom: 1rem;  /* Bottom padding */
 }
 
+/* Main heading styles */
 h1 {
-    color: #ff8c42;
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
+    color: #ff8c42;  /* Orange color */
+    font-size: 2.5rem;  /* Large font size */
+    margin-bottom: 0.5rem;  /* Bottom margin */
 }
 
+/* Header paragraph styles */
 header p {
-    color: #666;
-    font-size: 1.2rem;
-    margin: 0;
+    color: #666;  /* Medium gray text */
+    font-size: 1.2rem;  /* Font size */
+    margin: 0;  /* No margin */
 }
 
-/* Section styles */
+/* Section styles - for content sections */
 section {
-    margin-bottom: 2.5rem;
+    margin-bottom: 2.5rem;  /* Bottom margin */
 }
 
+/* Section heading styles */
 h2 {
-    color: #ff8c42;
-    font-size: 1.8rem;
-    margin-bottom: 1rem;
+    color: #ff8c42;  /* Orange color */
+    font-size: 1.8rem;  /* Font size */
+    margin-bottom: 1rem;  /* Bottom margin */
 }
 
+/* General paragraph styles */
 p {
-    color: #444;
-    margin-bottom: 1rem;
+    color: #444;  /* Dark gray text */
+    margin-bottom: 1rem;  /* Bottom margin */
 }
 
-/* List styles */
+/* List styles - removes default list styling */
 ul {
-    list-style-type: none;
-    padding: 0;
+    list-style-type: none;  /* No bullets */
+    padding: 0;  /* No padding */
 }
 
+/* List item styles */
 li {
-    margin-bottom: 0.8rem;
-    padding-left: 1.5rem;
-    position: relative;
+    margin-bottom: 0.8rem;  /* Bottom margin */
+    padding-left: 1.5rem;  /* Left padding for custom bullets */
+    position: relative;  /* For positioning custom bullets */
 }
 
+/* Custom bullet points for list items */
 li:before {
-    content: "•";
-    color: #ff8c42;
-    position: absolute;
-    left: 0;
+    content: "•";  /* Bullet character */
+    color: #ff8c42;  /* Orange color */
+    position: absolute;  /* Position absolutely */
+    left: 0;  /* Align to left */
 }
 
+/* Strong/bold text styling */
 strong {
-    color: #ff8c42;
+    color: #ff8c42;  /* Orange color */
 }
 
 /* Footer styles */
 footer {
-    margin-top: 3rem;
-    padding-top: 1rem;
-    border-top: 1px solid #ddd;
-    color: #666;
+    margin-top: 3rem;  /* Top margin */
+    padding-top: 1rem;  /* Top padding */
+    border-top: 1px solid #ddd;  /* Top border */
+    color: #666;  /* Medium gray text */
 }
 
+/* File grid container - organizes file icons in a grid layout */
 .file-grid {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-end;
-    align-items: center;
-    gap: 48px;
-    margin-top: 48px;
-    width: 100%;
+    display: flex;  /* Use flexbox layout */
+    flex-direction: row;  /* Arrange items horizontally */
+    justify-content: flex-end;  /* Align items to the right */
+    align-items: center;  /* Center items vertically */
+    gap: 48px;  /* Space between columns */
+    margin-top: 48px;  /* Top margin */
+    width: 100%;  /* Full width */
 }
 
+/* File column container - holds a column of file icons */
 .file-col {
-    display: flex;
-    flex-direction: column;
-    gap: 18px;
+    display: flex;  /* Use flexbox layout */
+    flex-direction: column;  /* Stack items vertically */
+    gap: 18px;  /* Space between files */
 }
 
+/* Left column alignment */
 .file-col-left {
-    align-items: center;
+    align-items: center;  /* Center items horizontally */
 }
 
+/* Right column alignment */
 .file-col-right {
-    align-items: flex-start;
+    align-items: flex-start;  /* Align items to the left */
 }
 
+/* Medium screen responsive adjustments */
 @media (max-width: 700px) {
     .file-grid {
-        gap: 24px;
+        gap: 24px;  /* Reduce gap on smaller screens */
     }
 }
 
-/* Remove mobile stacking, always use two columns */
+/* Mobile responsive adjustments - maintain two columns */
 @media (max-width: 500px) {
     .file-grid {
-        flex-direction: row;
-        justify-content: flex-end;
-        align-items: center;
-        gap: 24px;
-        width: 100%;
+        flex-direction: row;  /* Keep horizontal layout */
+        justify-content: flex-end;  /* Keep right alignment */
+        align-items: center;  /* Center items vertically */
+        gap: 24px;  /* Reduced gap */
+        width: 100%;  /* Full width */
     }
     .file-col {
-        flex-direction: column;
-        gap: 14px;
-        margin-bottom: 0;
+        flex-direction: column;  /* Stack files vertically */
+        gap: 14px;  /* Reduced gap */
+        margin-bottom: 0;  /* No bottom margin */
     }
     .file-col-left, .file-col-right {
-        align-items: center;
+        align-items: center;  /* Center items in both columns */
     }
 }
 
+/* Desktop file container - holds individual file icons */
 .desktop-file {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
+    display: flex;  /* Use flexbox layout */
+    flex-direction: column;  /* Stack icon and label vertically */
+    align-items: center;  /* Center items horizontally */
+    gap: 4px;  /* Small gap between icon and label */
 }
 
+/* Desktop link styling - makes file icons clickable */
 .desktop-link {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-decoration: none;
+    display: flex;  /* Use flexbox layout */
+    flex-direction: column;  /* Stack icon and label vertically */
+    align-items: center;  /* Center items horizontally */
+    text-decoration: none;  /* No underline */
 }
 
+/* Remove text decoration for visited and active states */
 .desktop-link:visited,
 .desktop-link:active {
-    text-decoration: none;
+    text-decoration: none;  /* No underline */
 }
 
+/* Hover effect for desktop links */
 .desktop-link:hover .desktop-label {
-    background: #e0e0e0;
-    color: #000;
-    text-decoration: underline;
+    background: #e0e0e0;  /* Light gray background */
+    color: #000;  /* Black text */
+    text-decoration: underline;  /* Show underline */
 }
 
+/* Desktop label styling - the text under file icons */
 .desktop-label {
-    background: #fff;
-    color: #222;
-    font-family: 'VT323', 'IBM Plex Mono', 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;
-    font-size: 13px;
-    font-weight: bold;
-    padding: 1px 7px 1px 7px;
-    margin-top: 0;
-    text-align: center;
-    text-decoration: none;
-    box-shadow: 1px 1px 0 #bbb;
-    letter-spacing: 0.5px;
-    transition: background 0.2s, color 0.2s, text-decoration 0.2s;
-    min-width: 70px;
-    max-width: 120px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    background: #fff;  /* White background */
+    color: #222;  /* Dark gray text */
+    font-family: 'VT323', 'IBM Plex Mono', 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;  /* Retro terminal fonts */
+    font-size: 13px;  /* Font size */
+    font-weight: bold;  /* Bold text */
+    padding: 1px 7px 1px 7px;  /* Internal padding */
+    margin-top: 0;  /* No top margin */
+    text-align: center;  /* Center text */
+    text-decoration: none;  /* No underline */
+    box-shadow: 1px 1px 0 #bbb;  /* Subtle drop shadow */
+    letter-spacing: 0.5px;  /* Space between letters */
+    transition: background 0.2s, color 0.2s, text-decoration 0.2s;  /* Smooth transitions */
+    min-width: 70px;  /* Minimum width */
+    max-width: 120px;  /* Maximum width */
+    display: flex;  /* Use flexbox layout */
+    justify-content: center;  /* Center content horizontally */
+    align-items: center;  /* Center content vertically */
 }
 
-/* Popup window styles */
+/* Popup window styles - for modal windows that appear when clicking files */
 .popup-window {
-    display: none;
-    position: absolute;
-    min-width: 220px;
-    max-width: 300px;
-    min-height: 80px;
-    background: #e0e0e0;
-    border: 2px solid #888;
-    border-radius: 8px;
-    box-shadow: 2px 2px 8px #2228;
-    z-index: 100;
-    font-family: 'VT323', 'IBM Plex Mono', 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;
-    font-size: 16px;
-    overflow: hidden;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.25s cubic-bezier(.4,0,.2,1);
+    display: none;  /* Hidden by default */
+    position: absolute;  /* Positioned absolutely within terminal */
+    min-width: 220px;  /* Minimum width */
+    max-width: 300px;  /* Maximum width */
+    min-height: 80px;  /* Minimum height */
+    background: #e0e0e0;  /* Light gray background */
+    border: 2px solid #888;  /* Dark gray border */
+    border-radius: 8px;  /* Rounded corners */
+    box-shadow: 2px 2px 8px #2228;  /* Drop shadow with transparency */
+    z-index: 100;  /* Layer above other content */
+    font-family: 'VT323', 'IBM Plex Mono', 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;  /* Retro terminal fonts */
+    font-size: 16px;  /* Font size */
+    overflow: hidden;  /* Hide overflow content */
+    opacity: 0;  /* Start invisible */
+    pointer-events: none;  /* Disable pointer events when hidden */
+    transition: opacity 0.25s cubic-bezier(.4,0,.2,1), transform 0.2s ease, box-shadow 0.2s ease;  /* Smooth transitions for all properties */
 }
 
+/* Active popup window - shown when popup is active */
 .popup-window.active {
-    display: block;
-    opacity: 1;
-    pointer-events: auto;
-    animation: popup-fade-in 0.25s cubic-bezier(.4,0,.2,1);
+    display: block;  /* Show the popup */
+    opacity: 1;  /* Make fully visible */
+    pointer-events: auto;  /* Enable pointer events */
+    animation: popup-fade-in 0.25s cubic-bezier(.4,0,.2,1);  /* Fade in animation */
 }
 
+/* Hover effects for active popup windows */
+.popup-window.active:hover {
+    transform: translateY(-2px) scale(1.02);  /* Slight lift and scale up */
+    box-shadow: 4px 4px 16px #222a, 0 0 8px #6664;  /* Enhanced shadow with glow effect */
+    border-color: #666;  /* Darker border on hover */
+}
+
+/* Popup header styling - the title bar of popup windows */
 .popup-header {
-    background: #d0d0d0;
-    border-bottom: 1px solid #888;
-    padding: 4px 10px;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    font-size: 13px;
-    font-family: inherit;
-    font-weight: bold;
-    cursor: move;
-    position: relative;
+    background: #d0d0d0;  /* Medium gray background */
+    border-bottom: 1px solid #888;  /* Bottom border */
+    padding: 4px 10px;  /* Internal padding */
+    display: flex;  /* Use flexbox layout */
+    flex-direction: row;  /* Arrange items horizontally */
+    align-items: center;  /* Center items vertically */
+    font-size: 13px;  /* Font size */
+    font-family: inherit;  /* Inherit font from parent */
+    font-weight: bold;  /* Bold text */
+    cursor: move;  /* Indicate draggable */
+    position: relative;  /* For positioning */
+    transition: background-color 0.2s ease;  /* Smooth background transition */
 }
 
+/* Header hover effect */
+.popup-window.active:hover .popup-header {
+    background: #c8c8c8;  /* Slightly darker background on hover */
+}
+
+/* Popup close button styling */
 .popup-close {
-    background: #b0b0b0;
-    border: 1.5px solid #888;
-    border-radius: 50%;
-    width: 14px;
-    height: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-family: inherit;
-    cursor: pointer;
-    color: transparent;
-    margin-right: 10px;
-    margin-left: 0;
-    order: 0;
-    padding: 0;
-    line-height: 1;
-    box-shadow: 0 1px 2px #8882;
-    position: relative;
+    background: #b0b0b0;  /* Light gray background */
+    border: 1.5px solid #888;  /* Dark gray border */
+    border-radius: 50%;  /* Circular shape */
+    width: 14px;  /* Width */
+    height: 14px;  /* Height */
+    display: flex;  /* Use flexbox layout */
+    align-items: center;  /* Center content vertically */
+    justify-content: center;  /* Center content horizontally */
+    font-size: 12px;  /* Font size */
+    font-family: inherit;  /* Inherit font from parent */
+    cursor: pointer;  /* Pointer cursor */
+    color: transparent;  /* Invisible text */
+    margin-right: 10px;  /* Right margin */
+    margin-left: 0;  /* No left margin */
+    order: 0;  /* First in flex order */
+    padding: 0;  /* No padding */
+    line-height: 1;  /* Line height */
+    box-shadow: 0 1px 2px #8882;  /* Subtle shadow */
+    position: relative;  /* For positioning */
+    transition: all 0.2s ease;  /* Smooth transitions for all properties */
 }
 
+/* Close button pseudo-element for additional styling */
 .popup-close:after {
-    content: '';
+    content: '';  /* Empty content */
 }
 
+/* Close button hover effect */
 .popup-close:hover {
-    background: #888;
-    border-color: #666;
+    background: #888;  /* Darker gray on hover */
+    border-color: #666;  /* Darker border on hover */
+    transform: scale(1.1);  /* Slightly larger on hover */
+    box-shadow: 0 2px 4px #8884;  /* Enhanced shadow */
 }
 
+/* Popup header title text */
 .popup-header span {
-    flex: 1;
-    text-align: center;
-    order: 1;
+    flex: 1;  /* Take remaining space */
+    text-align: center;  /* Center text */
+    order: 1;  /* Second in flex order */
+    transition: color 0.2s ease;  /* Smooth color transition */
 }
 
+/* Header title hover effect */
+.popup-window.active:hover .popup-header span {
+    color: #000;  /* Darker text on hover */
+}
+
+/* Popup content area styling */
 .popup-content {
-    padding: 18px 18px 12px 18px;
-    font-family: inherit;
-    color: #222;
-    font-size: 11px;
+    padding: 18px 18px 12px 18px;  /* Internal padding */
+    font-family: inherit;  /* Inherit font from parent */
+    color: #222;  /* Dark gray text */
+    font-size: 11px;  /* Font size */
+    transition: background-color 0.2s ease;  /* Smooth background transition */
 }
 
+/* Content area hover effect */
+.popup-window.active:hover .popup-content {
+    background: #f8f8f8;  /* Slightly lighter background on hover */
+}
+
+/* Retro title styling - the main site title */
 .retro-title {
-    font-family: 'VT323', 'IBM Plex Mono', 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;
-    font-size: 16px;
-    font-weight: bold;
-    color: #222;
-    letter-spacing: 1px;
-    margin-right: 18px;
-    margin-left: 2px;
-    user-select: none;
-    align-self: flex-start;
+    font-family: 'VT323', 'IBM Plex Mono', 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;  /* Retro terminal fonts */
+    font-size: 16px;  /* Font size */
+    font-weight: bold;  /* Bold text */
+    color: #222;  /* Dark gray text */
+    letter-spacing: 1px;  /* Space between letters */
+    margin-right: 18px;  /* Right margin */
+    margin-left: 2px;  /* Left margin */
+    user-select: none;  /* Prevent text selection */
+    align-self: flex-start;  /* Align to start of flex container */
 }
 
-/* Contact link styling */
+/* Contact link styling - for phone and email links */
 .contact-link {
-    color: #222;
-    text-decoration: none;
-    font-family: inherit;
-    transition: color 0.2s, text-decoration 0.2s;
+    color: #222;  /* Dark gray text */
+    text-decoration: none;  /* No underline */
+    font-family: inherit;  /* Inherit font from parent */
+    transition: color 0.2s, text-decoration 0.2s;  /* Smooth transitions */
 }
 
+/* Contact link hover effect */
 .contact-link:hover {
-    color: #444;
-    text-decoration: underline;
+    color: #444;  /* Lighter gray on hover */
+    text-decoration: underline;  /* Show underline */
 }
 
+/* Contact link visited state */
 .contact-link:visited {
-    color: #222;
+    color: #222;  /* Same color as normal state */
 }
 
+/* Contact link active state */
 .contact-link:active {
-    color: #666;
+    color: #666;  /* Medium gray when clicked */
 }
   
