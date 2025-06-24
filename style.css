@@ -387,6 +387,13 @@ footer {
     flex-direction: column;  /* Stack icon and label vertically */
     align-items: center;  /* Center items horizontally */
     gap: 4px;  /* Small gap between icon and label */
+    transition: transform 0.2s ease, filter 0.2s ease;  /* Smooth transitions for hover effects */
+}
+
+/* Hover effect for desktop file container */
+.desktop-file:hover {
+    transform: translateY(-3px) scale(1.05);  /* Lift up and scale slightly */
+    filter: brightness(1.1) contrast(1.1);  /* Brighten and enhance contrast */
 }
 
 /* Desktop link styling - makes file icons clickable */
@@ -395,6 +402,7 @@ footer {
     flex-direction: column;  /* Stack icon and label vertically */
     align-items: center;  /* Center items horizontally */
     text-decoration: none;  /* No underline */
+    transition: all 0.2s ease;  /* Smooth transitions for all properties */
 }
 
 /* Remove text decoration for visited and active states */
@@ -408,6 +416,14 @@ footer {
     background: #e0e0e0;  /* Light gray background */
     color: #000;  /* Black text */
     text-decoration: underline;  /* Show underline */
+    transform: scale(1.05);  /* Scale up the label slightly */
+    box-shadow: 2px 2px 4px #8886;  /* Enhanced shadow */
+}
+
+/* Enhanced hover effect for desktop icons */
+.desktop-link:hover .desktop-icon {
+    transform: scale(1.1) rotate(2deg);  /* Scale up and slight rotation */
+    filter: drop-shadow(2px 2px 4px #6666);  /* Add drop shadow */
 }
 
 /* Desktop label styling - the text under file icons */
@@ -423,12 +439,17 @@ footer {
     text-decoration: none;  /* No underline */
     box-shadow: 1px 1px 0 #bbb;  /* Subtle drop shadow */
     letter-spacing: 0.5px;  /* Space between letters */
-    transition: background 0.2s, color 0.2s, text-decoration 0.2s;  /* Smooth transitions */
+    transition: background 0.2s, color 0.2s, text-decoration 0.2s, transform 0.2s ease, box-shadow 0.2s ease;  /* Smooth transitions */
     min-width: 70px;  /* Minimum width */
     max-width: 120px;  /* Maximum width */
     display: flex;  /* Use flexbox layout */
     justify-content: center;  /* Center content horizontally */
     align-items: center;  /* Center content vertically */
+}
+
+/* Desktop icon styling - add transition for smooth animations */
+.desktop-icon {
+    transition: transform 0.2s ease, filter 0.2s ease;  /* Smooth transitions for hover effects */
 }
 
 /* Popup window styles - for modal windows that appear when clicking files */
