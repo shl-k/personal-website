@@ -99,7 +99,7 @@ window.addEventListener('DOMContentLoaded', () => {
             let newTop  = initTop  + dy;
           
             // uniform inset on all sides
-            const PADDING = 20;  // tweak as needed
+            const PADDING = 5;  // tweak as needed
           
             const minX = PADDING;
             const maxX = termRect.width  - rect.width  - PADDING;
