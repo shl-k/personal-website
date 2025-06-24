@@ -189,5 +189,14 @@ window.addEventListener('DOMContentLoaded', () => {
             removeBlurEffect();
         });
     });
+
+    // Clear all hover effects when clicking on the terminal
+    terminal.addEventListener('click', (e) => {
+        // Only clear effects if clicking on the terminal itself, not on file links
+        if (e.target === terminal || e.target.classList.contains('window-content')) {
+            clearTimeout(blurTimeout);
+            removeBlurEffect();
+        }
+    });
 });
   
