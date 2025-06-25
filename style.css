@@ -293,12 +293,12 @@ body {
 .desktop-link[href*="psv.vc"]::after {
     content: attr(data-tooltip);  /* Get tooltip text from data attribute */
     position: absolute;  /* Position absolutely */
-    top: -40px;  /* Position above the file */
-    left: -20px;  /* Position to the left */
-    transform: translateX(-50%);  /* Center the tooltip */
+    top: 50%;  /* Center vertically with the icon */
+    left: -220px;  /* Position to the left of the icon */
+    transform: translateY(-50%);  /* Center vertically */
     background: #222;  /* Dark background */
     color: #fff;  /* White text */
-    padding: 6px 10px;  /* Internal padding */
+    padding: 8px 12px;  /* Increased internal padding */
     border-radius: 4px;  /* Rounded corners */
     font-size: 11px;  /* Small font size */
     font-family: 'VT323', 'IBM Plex Mono', 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;  /* Retro terminal fonts */
@@ -309,6 +309,8 @@ body {
     z-index: 1000;  /* High z-index to appear above other elements */
     box-shadow: 0 2px 8px #0006;  /* Subtle shadow */
     border: 1px solid #444;  /* Subtle border */
+    width: 200px;  /* Fixed width for better readability */
+    text-align: center;  /* Center text */
 }
 
 /* Show tooltip on hover */
@@ -345,7 +347,7 @@ body {
     display: block;  /* Show the popup */
     opacity: 1;  /* Make fully visible */
     pointer-events: auto;  /* Enable pointer events */
-    animation: popup-expand 0.5s cubic-bezier(.4,0,.2,1);  /* Expand animation from top-left */
+    animation: popup-expand 0.6s cubic-bezier(.4,0,.2,1);  /* Slower expand animation from top-left */
 }
 
 /* Hover effects for active popup windows */
