@@ -1,6 +1,6 @@
 /* Base styles for the entire page */
 body {
-    background: #000;  /* Black background for the entire page */
+    background: #131313;  /* Black background for the entire page */
     min-height: 100vh;  /* Minimum height of 100% viewport height */
     margin: 0;  /* Remove default margins */
     display: flex;  /* Use flexbox for centering */
@@ -449,6 +449,7 @@ footer {
 
 /* Desktop icon styling - add transition for smooth animations */
 .desktop-icon {
+    color: #222;  /* Dark gray color for all icons */
     transition: transform 0.2s ease, filter 0.2s ease;  /* Smooth transitions for hover effects */
 }
 
