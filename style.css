@@ -14,7 +14,7 @@ body {
     max-width: 98vw;  /* Maximum width of 98% viewport width */
     min-width: 260px;  /* Minimum width to prevent too narrow windows */
     margin: 0 auto;  /* Center the terminal horizontally */
-    background: #c0c0c0;  /* Classic Mac gray background */
+    background: #a0a0a0;  /* Darker Mac gray background */
     border: 2px solid #888;  /* Dark gray border */
     border-radius: 12px;  /* Rounded corners */
     box-shadow: 0 0 24px #0008;  /* Drop shadow with 50% opacity black */
@@ -24,14 +24,21 @@ body {
     /* Pixel grid effect - creates a subtle scanline pattern */
     background-image: repeating-linear-gradient(0deg, #b0b0b0 0px, #b0b0b0 1px, transparent 1px, transparent 4px),
                       repeating-linear-gradient(90deg, #b0b0b0 0px, #b0b0b0 1px, transparent 1px, transparent 4px);
-    animation: flicker 1.5s infinite steps(2, end);  /* CRT flicker effect */
     font-family: 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace;  /* Retro terminal fonts */
 }
 
-/* CRT flicker animation - simulates old monitor flickering */
-@keyframes flicker {
-    0%, 100% { filter: brightness(1); }  /* Normal brightness */
-    50% { filter: brightness(0.97); }    /* Slightly dimmed */
+/* Popup expand animation - expands from top-left to bottom-right */
+@keyframes popup-expand {
+    0% {
+        transform: scale(0);
+        transform-origin: top left;
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        transform-origin: top left;
+        opacity: 1;
+    }
 }
 
 /* Mobile landscape mode - adjust terminal for landscape orientation */
@@ -82,20 +89,6 @@ body {
         max-width: 100px;  /* Maximum width */
     }
     
-    .file-list {
-        margin-top: 32px;  /* Reduced top margin */
-        gap: 14px;         /* Reduced gap */
-    }
-    
-    .file {
-        font-size: 16px;  /* Smaller font size */
-    }
-    
-    .file-icon {
-        font-size: 20px;  /* Smaller icon size */
-        margin-right: 8px;  /* Reduced margin */
-    }
-    
     .popup-window {
         min-width: 200px;  /* Minimum popup width */
         max-width: 280px;  /* Maximum popup width */
@@ -128,7 +121,7 @@ body {
 
 /* Terminal header/title bar styling */
 .terminal-header {
-    background: #e0e0e0;  /* Light gray background */
+    background: #c0c0c0;  /* Darker gray background */
     border-bottom: 1px solid #888;  /* Bottom border */
     padding: 4px 8px;  /* Internal padding */
     font-family: inherit;  /* Inherit font from parent */
@@ -157,174 +150,6 @@ body {
 .window-content {
     padding: 0 32px;  /* Horizontal padding */
     font-family: inherit;  /* Inherit font from parent */
-}
-
-/* Terminal title text styling */
-.terminal-title {
-    font-weight: bold;  /* Bold text */
-    letter-spacing: 1px;  /* Space between letters */
-}
-
-/* Command line styling */
-.command {
-    margin: 10px 0;  /* Vertical spacing around commands */
-}
-
-/* Command prompt symbol ($) styling */
-.prompt {
-    color: #00ff00;  /* Green color for prompt */
-    margin-right: 10px;  /* Space between $ and command */
-}
-
-/* Command text styling */
-.command-text {
-    color: #fff;  /* White text for commands */
-}
-
-/* Container for list of files */
-.file-list {
-    display: flex;  /* Use flexbox layout */
-    flex-direction: column;  /* Stack items vertically */
-    gap: 18px;  /* Space between files */
-    margin-top: 48px;  /* Top margin */
-}
-
-/* Individual file entry styling */
-.file {
-    display: flex;  /* Use flexbox layout */
-    align-items: center;  /* Center items vertically */
-    font-size: 18px;  /* Font size */
-    color: #222;  /* Dark gray text */
-    font-family: inherit;  /* Inherit font from parent */
-    padding-left: 8px;  /* Left padding */
-}
-
-/* File icon spacing - adds space between icon and text */
-.file-icon {
-    margin-right: 10px;  /* Space to the right of the icon */
-    font-size: 22px;     /* Icon size */
-}
-
-/* Special styling for LinkedIn icon - gives it a distinctive green background */
-.file:first-child .file-icon {
-    background-color: #00ff00;  /* Green background */
-    color: #000;  /* Black text */
-    padding: 0 2px;  /* Add some padding */
-    border: 1px solid #00ff00;  /* Green border */
-}
-
-/* Clickable file name styling - makes file names look like links */
-.file-name {
-    color: #222;  /* Dark gray text */
-    text-decoration: none;  /* No underline by default */
-    transition: text-decoration 0.2s;  /* Smooth transition for hover effects */
-    font-family: inherit;  /* Inherit font from parent */
-}
-
-/* File name hover effect - adds underline when hovering */
-.file-name:hover {
-    text-decoration: underline;  /* Show underline on hover */
-}
-
-/* Container for file contents - styles the content area of files */
-.file-content {
-    margin: 32px 0 0 0;  /* Top margin only */
-    padding: 16px;  /* Internal padding */
-    border: 1px solid #bbb;  /* Light gray border */
-    background: #eaeaea;  /* Light gray background */
-    border-radius: 6px;  /* Rounded corners */
-    font-family: inherit;  /* Inherit font from parent */
-    color: #222;  /* Dark gray text */
-    font-size: 16px;  /* Font size */
-}
-
-/* Paragraph text in file content - spacing between paragraphs */
-.file-content p {
-    margin: 5px 0;  /* Vertical spacing around paragraphs */
-}
-
-/* Blinking cursor effect after command text - simulates terminal cursor */
-.command-text::after {
-    content: '█';  /* Block character for cursor */
-    animation: blink 1s infinite;  /* Make it blink continuously */
-}
-
-/* Animation for blinking cursor - makes cursor fade in and out */
-@keyframes blink {
-    50% { opacity: 0; }  /* Make cursor invisible half the time */
-}
-
-/* Header styles - for the main page header */
-header {
-    margin-bottom: 3rem;  /* Bottom margin */
-    border-bottom: 2px solid #ff8c42;  /* Orange bottom border */
-    padding-bottom: 1rem;  /* Bottom padding */
-}
-
-/* Main heading styles */
-h1 {
-    color: #ff8c42;  /* Orange color */
-    font-size: 2.5rem;  /* Large font size */
-    margin-bottom: 0.5rem;  /* Bottom margin */
-}
-
-/* Header paragraph styles */
-header p {
-    color: #666;  /* Medium gray text */
-    font-size: 1.2rem;  /* Font size */
-    margin: 0;  /* No margin */
-}
-
-/* Section styles - for content sections */
-section {
-    margin-bottom: 2.5rem;  /* Bottom margin */
-}
-
-/* Section heading styles */
-h2 {
-    color: #ff8c42;  /* Orange color */
-    font-size: 1.8rem;  /* Font size */
-    margin-bottom: 1rem;  /* Bottom margin */
-}
-
-/* General paragraph styles */
-p {
-    color: #444;  /* Dark gray text */
-    margin-bottom: 1rem;  /* Bottom margin */
-}
-
-/* List styles - removes default list styling */
-ul {
-    list-style-type: none;  /* No bullets */
-    padding: 0;  /* No padding */
-}
-
-/* List item styles */
-li {
-    margin-bottom: 0.8rem;  /* Bottom margin */
-    padding-left: 1.5rem;  /* Left padding for custom bullets */
-    position: relative;  /* For positioning custom bullets */
-}
-
-/* Custom bullet points for list items */
-li:before {
-    content: "•";  /* Bullet character */
-    color: #ff8c42;  /* Orange color */
-    position: absolute;  /* Position absolutely */
-    left: 0;  /* Align to left */
-}
-
-/* Strong/bold text styling */
-strong {
-    color: #ff8c42;  /* Orange color */
-}
-
-/* Footer styles */
-footer {
-    margin-top: 3rem;  /* Top margin */
-    padding-top: 1rem;  /* Top padding */
-    border-top: 1px solid #ddd;  /* Top border */
-    color: #666;  /* Medium gray text */
 }
 
 /* File grid container - organizes file icons in a grid layout */
@@ -520,7 +345,7 @@ footer {
     display: block;  /* Show the popup */
     opacity: 1;  /* Make fully visible */
     pointer-events: auto;  /* Enable pointer events */
-    animation: popup-fade-in 0.25s cubic-bezier(.4,0,.2,1);  /* Fade in animation */
+    animation: popup-expand 0.5s cubic-bezier(.4,0,.2,1);  /* Expand animation from top-left */
 }
 
 /* Hover effects for active popup windows */
@@ -610,7 +435,7 @@ footer {
     transition: background-color 0.2s ease;  /* Smooth background transition */
 }
 
-/* Content area hover effect */
+/* Popup content area hover effect */
 .popup-window.active:hover .popup-content {
     background: #f8f8f8;  /* Slightly lighter background on hover */
 }
