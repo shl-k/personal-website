@@ -188,6 +188,40 @@ window.addEventListener('DOMContentLoaded', () => {
             clearTimeout(blurTimeout);
             removeBlurEffect();
         });
+
+        // Mobile touch handling - prevent immediate navigation
+        let touchStartTime = 0;
+        let hasTouched = false;
+
+        link.addEventListener('touchstart', (e) => {
+            touchStartTime = Date.now();
+            hasTouched = true;
+            
+            // Show tooltip immediately on touch
+            clearTimeout(blurTimeout);
+            blurTimeout = setTimeout(() => {
+                applyBlurEffect(fileContainer);
+            }, 100);
+        }, { passive: true });
+
+        link.addEventListener('touchend', (e) => {
+            const touchDuration = Date.now() - touchStartTime;
+            
+            // If it's a quick tap and we haven't navigated yet, prevent navigation
+            if (touchDuration < 300 && hasTouched) {
+                e.preventDefault();
+                hasTouched = false;
+                
+                // Remove blur effect after a short delay
+                setTimeout(() => {
+                    removeBlurEffect();
+                }, 1000);
+            } else {
+                // Allow navigation on longer press or second tap
+                hasTouched = false;
+                removeBlurEffect();
+            }
+        });
     });
 
     // Clear all hover effects when clicking on the terminal
