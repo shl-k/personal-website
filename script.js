@@ -211,11 +211,6 @@ window.addEventListener('DOMContentLoaded', () => {
             if (touchDuration < 300 && hasTouched) {
                 e.preventDefault();
                 hasTouched = false;
-                
-                // Remove blur effect after a short delay
-                setTimeout(() => {
-                    removeBlurEffect();
-                }, 1000);
             } else {
                 // Allow navigation on longer press or second tap
                 hasTouched = false;
