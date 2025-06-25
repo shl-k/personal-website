@@ -274,8 +274,18 @@ body {
 
 /* Desktop icon styling - add transition for smooth animations */
 .desktop-icon {
-    color: #222;  /* Dark gray color for all icons */
-    transition: transform 0.2s ease, filter 0.2s ease;  /* Smooth transitions for hover effects */
+    margin-bottom: 2px; /* Reduce this value to move icon higher, increase to move lower */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Make all desktop icons larger and higher up */
+.desktop-icon img {
+    width: 44px;   /* Change this value to adjust icon width */
+    height: 44px;  /* Change this value to adjust icon height */
+    object-fit: contain;
+    display: block;
 }
 
 /* Tooltip container for external links */
@@ -477,5 +487,42 @@ body {
 /* Contact link active state */
 .contact-link:active {
     color: #666;  /* Medium gray when clicked */
+}
+
+/* Add class-based styles for each icon */
+.calendly-icon img {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 4px;
+}
+
+.linkedin-icon img {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 2px;
+}
+
+.paragon-icon img {
+  width: 39px;
+  height: 39px;
+  margin-bottom: 4px;
+}
+
+.psv-icon img {
+  width: 38px;
+  height: 38px;
+  margin-bottom: 4px;
+}
+
+.about-icon img {
+  width: 45px;
+  height: 45px;
+  margin-bottom: 4px;
+}
+
+.contact-icon img {
+  width: 40px;
+  height: 40px;
+  margin-bottom: 4px;
 }
   
