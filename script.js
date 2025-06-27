@@ -32,6 +32,7 @@ window.addEventListener('DOMContentLoaded', () => {
     const terminal = document.querySelector('.terminal');  // Main terminal container
     const header   = document.querySelector('.terminal-header');  // Terminal header
     const fileGrid = document.querySelector('.file-grid');  // File grid container
+    const allFiles = document.querySelectorAll('.desktop-file'); // All icon containers
 
     let zCounter = 200;  // Z-index counter for layering popups
     function bringToFront(popup) {
@@ -146,86 +147,92 @@ window.addEventListener('DOMContentLoaded', () => {
     makeDraggable(popups.contact);  // Make contact popup draggable
     makeDraggable(popups.about);    // Make about popup draggable
 
-    // Blur effect for external links
-    let blurTimeout;  // Timeout for delayed blur effect
-    const externalLinks = document.querySelectorAll('.desktop-link[href*="calendly"], .desktop-link[href*="linkedin"], .desktop-link[href*="paragonpatents"], .desktop-link[href*="psv.vc"]');
-    const allFiles = document.querySelectorAll('.desktop-file');
+    // --- BEGIN DFA ICON LOGIC ---
+    let activeIcon = null; // Track the currently active (focused) icon
+    const allLinks = document.querySelectorAll('.desktop-link[href]');
 
-    // Function to apply blur effect
-    function applyBlurEffect(hoveredFile) {
+    // Helper: Blur all except the active icon
+    function applyBlurState(activeLink) {
         allFiles.forEach(file => {
-            if (file !== hoveredFile) {
+            const link = file.querySelector('.desktop-link[href]');
+            if (link !== activeLink) {
                 file.style.filter = 'blur(2px) brightness(0.5)';
                 file.style.opacity = '0.4';
+                link.style.pointerEvents = 'none'; // Make other icons unclickable
+            } else {
+                file.style.filter = '';
+                file.style.opacity = '';
+                link.style.pointerEvents = 'auto';
             }
         });
     }
 
-    // Function to remove blur effect
-    function removeBlurEffect() {
+    // Helper: Remove all blur and reset
+    function clearBlurState() {
         allFiles.forEach(file => {
             file.style.filter = '';
             file.style.opacity = '';
+            const link = file.querySelector('.desktop-link[href]');
+            if (link) link.style.pointerEvents = 'auto';
         });
+        activeIcon = null;
     }
 
-    // Add hover listeners to external links
-    externalLinks.forEach(link => {
-        const fileContainer = link.closest('.desktop-file');
-        
-        link.addEventListener('mouseenter', () => {
-            // Clear any existing timeout
-            clearTimeout(blurTimeout);
-            
-            // Set timeout for 0.5 second delay
-            blurTimeout = setTimeout(() => {
-                applyBlurEffect(fileContainer);
-            }, 300);
+    function isTouchDevice() {
+        return (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
+    }
+
+    if (!isTouchDevice()) {
+        // DESKTOP: Use hover to set active, click to open, mouseleave to reset
+        let blurTimer = null;
+        allFiles.forEach(file => {
+            const link = file.querySelector('.desktop-link[href]');
+            if (!link) return;
+            file.addEventListener('mouseenter', function() {
+                blurTimer = setTimeout(() => {
+                    if (activeIcon !== link) {
+                        activeIcon = link;
+                        applyBlurState(link);
+                    }
+                }, 500); // 400ms delay before blur kicks in
+            });
+            file.addEventListener('mouseleave', function() {
+                clearTimeout(blurTimer); // Cancel blur if mouse leaves early
+                clearBlurState();
+            });
+            link.addEventListener('click', function(e) {
+                if (activeIcon !== link) {
+                    // Not active, do nothing special; let the click go through
+                    // Optionally: e.preventDefault();
+                } else {
+                    // Active, allow navigation and reset
+                    clearBlurState();
+                }
+            });
         });
-
-        link.addEventListener('mouseleave', () => {
-            // Clear timeout and remove blur immediately
-            clearTimeout(blurTimeout);
-            removeBlurEffect();
+    } else {
+        // MOBILE: Use tap to set active, tap again to open, tap elsewhere to reset
+        allLinks.forEach(link => {
+            link.addEventListener('touchend', function(e) {
+                if (activeIcon !== link) {
+                    e.preventDefault();
+                    activeIcon = link;
+                    applyBlurState(link);
+                } else {
+                    // Second tap: allow navigation
+                    clearBlurState();
+                    window.location = link.href;
+                }
+            });
         });
-
-        // Mobile touch handling - prevent immediate navigation
-        let touchStartTime = 0;
-        let hasTouched = false;
-
-        link.addEventListener('touchstart', (e) => {
-            touchStartTime = Date.now();
-            hasTouched = true;
-            
-            // Show tooltip immediately on touch
-            clearTimeout(blurTimeout);
-            blurTimeout = setTimeout(() => {
-                applyBlurEffect(fileContainer);
-            }, 100);
-        }, { passive: true });
-
-        link.addEventListener('touchend', (e) => {
-            const touchDuration = Date.now() - touchStartTime;
-            
-            // If it's a quick tap and we haven't navigated yet, prevent navigation
-            if (touchDuration < 300 && hasTouched) {
-                e.preventDefault();
-                hasTouched = false;
-            } else {
-                // Allow navigation on longer press or second tap
-                hasTouched = false;
-                removeBlurEffect();
+        document.addEventListener('touchstart', function(e) {
+            if (activeIcon && !activeIcon.contains(e.target)) {
+                clearBlurState();
             }
-        });
-    });
+        }, {passive:true});
+    }
+    // --- END DFA ICON LOGIC ---
 
-    // Clear all hover effects when clicking on the terminal
-    terminal.addEventListener('click', (e) => {
-        // Only clear effects if clicking on the terminal itself, not on file links
-        if (e.target === terminal || e.target.classList.contains('window-content')) {
-            clearTimeout(blurTimeout);
-            removeBlurEffect();
-        }
-    });
+    // (Remove or comment out the old blur/hover/touch logic for externalLinks)
 });
   
