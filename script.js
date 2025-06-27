@@ -214,14 +214,17 @@ window.addEventListener('DOMContentLoaded', () => {
         // MOBILE: Use tap to set active, tap again to open, tap elsewhere to reset
         allLinks.forEach(link => {
             link.addEventListener('touchend', function(e) {
+                // Always prevent default to avoid duplicate navigation
+                e.preventDefault();
                 if (activeIcon !== link) {
-                    e.preventDefault();
+                    // Tapped a different icon: reset DFA, set new active, blur others
+                    clearBlurState();
                     activeIcon = link;
                     applyBlurState(link);
                 } else {
-                    // Second tap: allow navigation
+                    // Second tap: open in new tab only, then reset
                     clearBlurState();
-                    window.location = link.href;
+                    window.open(link.href, '_blank');
                 }
             });
         });
