@@ -186,80 +186,72 @@ window.addEventListener('DOMContentLoaded', () => {
         activeIcon = null;
     }
 
-    function isTouchDevice() {
-        return (('ontouchstart' in window) || (navigator.maxTouchPoints > 0));
-    }
-
-    if (!isTouchDevice()) {
-        // DESKTOP: Use hover for immediate blur on external links, immediate open for internal links
-        allFiles.forEach(file => {
-            const link = file.querySelector('.desktop-link[href]');
-            if (!link) return;
-            
-            if (isInternalLink(link)) {
-                // Internal links (about/contact): open immediately on click
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const id = link.id.replace('-link', '');
-                    openPopup(popups[id]);
-                });
-            } else {
-                // External links: use hover blur logic with immediate effect
-                file.addEventListener('mouseenter', function() {
-                    if (activeIcon !== link) {
-                        activeIcon = link;
-                        applyBlurState(link);
-                    }
-                });
-                
-                file.addEventListener('mouseleave', function() {
-                    clearBlurState();
-                });
-                
-                link.addEventListener('click', function(e) {
-                    if (activeIcon === link) {
-                        // Active, allow navigation and reset
-                        clearBlurState();
-                    }
-                    // Let the click go through to open the link
-                });
-            }
-        });
-    } else {
-        // MOBILE: First tap activates blur for external links, opens popup for internal links
-        allLinks.forEach(link => {
-            if (isInternalLink(link)) {
-                // Internal links (about/contact): open immediately on first tap
-                link.addEventListener('touchend', function(e) {
-                    e.preventDefault();
-                    const id = link.id.replace('-link', '');
-                    openPopup(popups[id]);
-                });
-            } else {
-                // External links: use DFA tap logic
-                link.addEventListener('touchend', function(e) {
-                    e.preventDefault();
-                    if (activeIcon !== link) {
-                        // First tap: set active and blur others
-                        clearBlurState();
-                        activeIcon = link;
-                        applyBlurState(link);
-                    } else {
-                        // Second tap: open link and reset
-                        clearBlurState();
-                        window.open(link.href, '_blank');
-                    }
-                });
-            }
-        });
+    // Set up both desktop and mobile event handlers
+    // This works better than device detection for DevTools and cross-platform compatibility
+    let touchUsed = false;
+    
+    allFiles.forEach(file => {
+        const link = file.querySelector('.desktop-link[href]');
+        if (!link) return;
         
-        // Clear blur state when tapping outside any desktop-link
-        document.addEventListener('touchstart', function(e) {
-            if (activeIcon && !e.target.closest('.desktop-link')) {
+        if (isInternalLink(link)) {
+            // Internal links (about/contact): open immediately on click/touch
+            link.addEventListener('click', function(e) {
+                if (touchUsed) return; // Prevent double firing on touch devices
+                e.preventDefault();
+                const id = link.id.replace('-link', '');
+                openPopup(popups[id]);
+            });
+            
+            link.addEventListener('touchend', function(e) {
+                touchUsed = true;
+                e.preventDefault();
+                const id = link.id.replace('-link', '');
+                openPopup(popups[id]);
+                setTimeout(() => touchUsed = false, 300); // Reset after 300ms
+            });
+        } else {
+            // External links: different behavior for desktop vs mobile
+            
+            // DESKTOP: hover blur logic
+            file.addEventListener('mouseenter', function() {
+                if (touchUsed) return; // Skip if touch was recently used
+                if (activeIcon !== link) {
+                    activeIcon = link;
+                    applyBlurState(link);
+                }
+            });
+            
+            file.addEventListener('mouseleave', function() {
+                if (touchUsed) return; // Skip if touch was recently used
                 clearBlurState();
-            }
-        }, {passive: true});
-    }
+            });
+            
+            link.addEventListener('click', function(e) {
+                if (touchUsed) return; // Prevent double firing on touch devices
+                if (activeIcon === link) {
+                    // Active, allow navigation and reset
+                    clearBlurState();
+                }
+                // Let the click go through to open the link
+            });
+            
+            // MOBILE: tap to open immediately
+            link.addEventListener('touchend', function(e) {
+                touchUsed = true;
+                e.preventDefault();
+                window.open(link.href, '_blank');
+                setTimeout(() => touchUsed = false, 300); // Reset after 300ms
+            });
+        }
+    });
+    
+    // Clear blur state when tapping outside any desktop-link (desktop only)
+    document.addEventListener('touchstart', function(e) {
+        if (!touchUsed && activeIcon && !e.target.closest('.desktop-link')) {
+            clearBlurState();
+        }
+    }, {passive: true});
     // --- END DFA ICON LOGIC ---
 
     // (Remove or comment out the old blur/hover/touch logic for externalLinks)
