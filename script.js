@@ -151,14 +151,22 @@ window.addEventListener('DOMContentLoaded', () => {
     let activeIcon = null; // Track the currently active (focused) icon
     const allLinks = document.querySelectorAll('.desktop-link[href]');
 
-    // Helper: Blur all except the active icon
+    // Helper: Identify if a link is internal (about/contact) or external
+    function isInternalLink(link) {
+        return link.id === 'about-link' || link.id === 'contact-link';
+    }
+
+    // Helper: Blur all files except the active one
     function applyBlurState(activeLink) {
         allFiles.forEach(file => {
             const link = file.querySelector('.desktop-link[href]');
+            if (!link) return;
+
+            // Blur all files except the active one
             if (link !== activeLink) {
                 file.style.filter = 'blur(2px) brightness(0.5)';
                 file.style.opacity = '0.4';
-                link.style.pointerEvents = 'none'; // Make other icons unclickable
+                link.style.pointerEvents = 'none';
             } else {
                 file.style.filter = '';
                 file.style.opacity = '';
@@ -183,56 +191,74 @@ window.addEventListener('DOMContentLoaded', () => {
     }
 
     if (!isTouchDevice()) {
-        // DESKTOP: Use hover to set active, click to open, mouseleave to reset
-        let blurTimer = null;
+        // DESKTOP: Use hover for immediate blur on external links, immediate open for internal links
         allFiles.forEach(file => {
             const link = file.querySelector('.desktop-link[href]');
             if (!link) return;
-            file.addEventListener('mouseenter', function() {
-                blurTimer = setTimeout(() => {
+            
+            if (isInternalLink(link)) {
+                // Internal links (about/contact): open immediately on click
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const id = link.id.replace('-link', '');
+                    openPopup(popups[id]);
+                });
+            } else {
+                // External links: use hover blur logic with immediate effect
+                file.addEventListener('mouseenter', function() {
                     if (activeIcon !== link) {
                         activeIcon = link;
                         applyBlurState(link);
                     }
-                }, 500); // 400ms delay before blur kicks in
-            });
-            file.addEventListener('mouseleave', function() {
-                clearTimeout(blurTimer); // Cancel blur if mouse leaves early
-                clearBlurState();
-            });
-            link.addEventListener('click', function(e) {
-                if (activeIcon !== link) {
-                    // Not active, do nothing special; let the click go through
-                    // Optionally: e.preventDefault();
-                } else {
-                    // Active, allow navigation and reset
+                });
+                
+                file.addEventListener('mouseleave', function() {
                     clearBlurState();
-                }
-            });
+                });
+                
+                link.addEventListener('click', function(e) {
+                    if (activeIcon === link) {
+                        // Active, allow navigation and reset
+                        clearBlurState();
+                    }
+                    // Let the click go through to open the link
+                });
+            }
         });
     } else {
-        // MOBILE: Use tap to set active, tap again to open, tap elsewhere to reset
+        // MOBILE: First tap activates blur for external links, opens popup for internal links
         allLinks.forEach(link => {
-            link.addEventListener('touchend', function(e) {
-                // Always prevent default to avoid duplicate navigation
-                e.preventDefault();
-                if (activeIcon !== link) {
-                    // Tapped a different icon: reset DFA, set new active, blur others
-                    clearBlurState();
-                    activeIcon = link;
-                    applyBlurState(link);
-                } else {
-                    // Second tap: open in new tab only, then reset
-                    clearBlurState();
-                    window.open(link.href, '_blank');
-                }
-            });
+            if (isInternalLink(link)) {
+                // Internal links (about/contact): open immediately on first tap
+                link.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    const id = link.id.replace('-link', '');
+                    openPopup(popups[id]);
+                });
+            } else {
+                // External links: use DFA tap logic
+                link.addEventListener('touchend', function(e) {
+                    e.preventDefault();
+                    if (activeIcon !== link) {
+                        // First tap: set active and blur others
+                        clearBlurState();
+                        activeIcon = link;
+                        applyBlurState(link);
+                    } else {
+                        // Second tap: open link and reset
+                        clearBlurState();
+                        window.open(link.href, '_blank');
+                    }
+                });
+            }
         });
+        
+        // Clear blur state when tapping outside any desktop-link
         document.addEventListener('touchstart', function(e) {
-            if (activeIcon && !activeIcon.contains(e.target)) {
+            if (activeIcon && !e.target.closest('.desktop-link')) {
                 clearBlurState();
             }
-        }, {passive:true});
+        }, {passive: true});
     }
     // --- END DFA ICON LOGIC ---
 
