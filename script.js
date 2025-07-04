@@ -225,7 +225,7 @@ window.addEventListener('DOMContentLoaded', () => {
             file.addEventListener('mouseleave', function() {
                 if (touchUsed) return; // Skip if touch was recently used
                 clearBlurState();
-            });
+            });i
             
             link.addEventListener('click', function(e) {
                 if (touchUsed) return; // Prevent double firing on touch devices
