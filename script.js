@@ -194,6 +194,8 @@ window.addEventListener('DOMContentLoaded', () => {
         const link = file.querySelector('.desktop-link[href]');
         if (!link) return;
         
+        console.log('Processing link:', link.href, 'ID:', link.id, 'isInternal:', isInternalLink(link));
+        
         if (isInternalLink(link)) {
             // Internal links (about/contact): open immediately on click/touch
             link.addEventListener('click', function(e) {
@@ -215,8 +217,10 @@ window.addEventListener('DOMContentLoaded', () => {
             
             // DESKTOP: hover blur logic
             file.addEventListener('mouseenter', function() {
+                console.log('Mouse entered:', link.href);
                 if (touchUsed) return; // Skip if touch was recently used
                 if (activeIcon !== link) {
+                    console.log('Setting active icon and applying blur:', link.href);
                     activeIcon = link;
                     applyBlurState(link);
                 }
@@ -225,7 +229,7 @@ window.addEventListener('DOMContentLoaded', () => {
             file.addEventListener('mouseleave', function() {
                 if (touchUsed) return; // Skip if touch was recently used
                 clearBlurState();
-            });i
+            });
             
             link.addEventListener('click', function(e) {
                 if (touchUsed) return; // Prevent double firing on touch devices
