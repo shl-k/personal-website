@@ -1,0 +1,16 @@
+{
+  "name": "personal-website",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "build:course": "esbuild course-src/main.jsx --bundle --minify --jsx=automatic --outfile=course/bundle.js"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "serve": "^14.2.6"
+  }
+}
