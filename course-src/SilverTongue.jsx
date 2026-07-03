@@ -325,11 +325,10 @@ function Btn({ children, onClick, primary, disabled, style }) {
 const HOW_IT_WORKS = [
   {
     title: "Eight chapters, in order",
-    body: "Each one builds on the last — a governing read, then six moves, then a capstone that puts them all under pressure. Start at the top and work down.",
   },
   {
     title: "Four parts per chapter",
-    body: "Framework, a worked example, a case study, and a reflection to carry with you through the week.",
+    list: ["Theoretical framework", "Worked example", "Case study", "Reflection"],
   },
   {
     title: "Your pace, saved as you go",
@@ -352,7 +351,6 @@ function Onboarding({ onDone }) {
 
       {stage === 0 && (
         <div>
-          <p style={{ fontFamily: T.serif, fontSize: 17, color: T.ink, margin: "0 0 32px" }}>What should we call you?</p>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -386,9 +384,16 @@ function Onboarding({ onDone }) {
                 }}>{i + 1}</div>
                 <div>
                   <div style={{ fontFamily: T.serif, fontSize: 17, color: T.ink }}>{step.title}</div>
-                  <div style={{ fontFamily: T.serif, fontSize: 15, color: T.muted, marginTop: 4, lineHeight: 1.55 }}>
-                    {step.body}
-                  </div>
+                  {step.body && (
+                    <div style={{ fontFamily: T.serif, fontSize: 15, color: T.muted, marginTop: 4, lineHeight: 1.55 }}>
+                      {step.body}
+                    </div>
+                  )}
+                  {step.list && (
+                    <ol style={{ fontFamily: T.serif, fontSize: 15, color: T.muted, marginTop: 4, lineHeight: 1.55, paddingLeft: 18 }}>
+                      {step.list.map((item) => <li key={item}>{item}</li>)}
+                    </ol>
+                  )}
                 </div>
               </div>
             ))}
@@ -415,16 +420,16 @@ function MapView({ state, onOpenWeek, onOpenMoves }) {
         </h1>
         <p style={{ fontFamily: T.serif, fontStyle: "italic", fontSize: 15.5, color: T.muted, marginTop: 10 }}>
           {done.length === 0
-            ? `Welcome, ${state.name || "friend"}. Every chapter has the same anatomy: framework, example, case, reflection.`
+            ? `Welcome, ${state.name || "friend"}.`
             : done.length === 8
             ? "All eight complete. The reflection column is next month's curriculum."
             : `${done.length} of 8 complete. The week between chapters is where the instinct gets built.`}
         </p>
         <div style={{ marginTop: 18 }}>
-          <button onClick={onOpenMoves} style={{
+          <button disabled style={{
             fontFamily: T.serif, fontSize: 13.5, letterSpacing: "0.14em", textTransform: "uppercase",
-            background: "none", border: "none", borderBottom: `1px solid ${T.accent}`,
-            color: T.accent, cursor: "pointer", padding: "2px 1px",
+            background: "none", border: "none", borderBottom: `1px solid ${T.line}`,
+            color: T.line, cursor: "default", padding: "2px 1px",
           }}>The Seven Moves — reference</button>
         </div>
       </div>
@@ -436,17 +441,18 @@ function MapView({ state, onOpenWeek, onOpenMoves }) {
         }} />
         {WEEKS.map((w) => {
           const isDone = done.includes(w.n);
+          const locked = w.n !== 1;
           return (
             <div
               key={w.n}
-              onClick={() => onOpenWeek(w.n)}
+              onClick={() => !locked && onOpenWeek(w.n)}
               style={{
                 display: "flex", alignItems: "flex-start", gap: 22,
-                padding: "18px 14px", cursor: "pointer", position: "relative",
-                borderRadius: 3,
+                padding: "18px 14px", cursor: locked ? "default" : "pointer", position: "relative",
+                borderRadius: 3, opacity: locked ? 0.4 : 1,
               }}
-              onMouseEnter={(e) => (e.currentTarget.style.background = T.paper)}
-              onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+              onMouseEnter={(e) => !locked && (e.currentTarget.style.background = T.paper)}
+              onMouseLeave={(e) => !locked && (e.currentTarget.style.background = "transparent")}
             >
               <div style={{
                 width: 54, minWidth: 54, height: 54, borderRadius: "50%",

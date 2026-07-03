@@ -61,7 +61,7 @@ export default function TerminalShell({ title, children }) {
                 color: "#444", textDecoration: "none", boxShadow: "0 1px 2px #8882",
                 fontFamily: VT, fontSize: 13, lineHeight: 1,
               }}
-            >←</a>
+            ><span style={{ transform: "translateY(-1px)" }}>←</span></a>
             <span style={{ fontFamily: VT, fontSize: 16, fontWeight: "bold", color: "#222", letterSpacing: 1 }}>
               {title}
             </span>
