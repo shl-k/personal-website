@@ -68,23 +68,18 @@ const WEEKS = [
     framework: [
       "Most people speak in one register and hope it lands. A silver tongue is a frequency-matching radio, not a fixed broadcast: the same true message, tuned so it can actually be received.",
       "That word — true — is the line. Manipulation changes the content of truth to win. This craft changes the packaging of truth to be understood. You translate; you never bend. Trainees drift toward the easy version (say what they want to hear) unless anchored to the harder one (say the true thing in the language they can hear it in).",
-      "Underneath every persuasive moment sits one silent question the other person is asking: why should I trust you? The Trust Triangle answers it. Logic is the base — the analytical spine that actually drives the answer. Empathy and authenticity are the two sides that let the logic through the door. Miss a side and the base never gets heard.",
+      "Underneath every persuasive moment sits one silent question the other person is asking: why should I trust you? Humans have been debating how to answer that question for thousands of years. About 2,400 years ago, the Greek philosopher Aristotle wrote a treatise called Rhetoric, laying out a framework for persuasion that's still taught today — usually drawn as a triangle.",
+      "Logos sits at the bottom point — the logic and evidence that give an argument something to stand on. Pathos and ethos sit at the top two corners: pathos is the emotional pull, ethos is the credibility of the person making the case. All three have to show up, or the triangle collapses.",
+      "Translate that into today's world and it still holds. In a data-driven world, being analytical is what drives trust — without facts and substance, people can't tell if you're telling the truth. That's logos. Then there's empathy, which is pathos, and authenticity, which is ethos. In sales especially, the soft skills matter as much as the substance: you have to actually be yourself, and read the person in front of you.",
     ],
+    diagram: "trustTriangle",
+    diagramAfter: 2,
     example: {
-      what: "No outside clip this week. The worked example is the Denise case below — read it twice: once for what was said, once for what was staged before anything was said.",
-      watchFor: "Notice how much happens before the first sentence: seat position, hand speed, eye contact. The mime rule — the body argues first.",
-      link: null,
+      what: "Watch \"How to use rhetoric to get what you want\" — a short TED-Ed lesson by Camille Langston that walks through Aristotle's three appeals directly.",
+      watchFor: "Notice that none of the three appeals works alone in her examples — it's always a combination, weighted differently depending on the audience.",
+      link: "https://www.youtube.com/watch?v=3klMM9BkW5o",
     },
-    caseStudy: {
-      setup: "You are 15 minutes into a first meeting with Denise, COO of a third-generation family manufacturing company. 58 years old, 30 years at the company, started on the floor. Six sentences all meeting, no smile. When you said 'leveraging synergies across the value chain,' she said flatly: 'I don't know what that means. Say it in English.' Arms crossed — but she leaned forward slightly when you mentioned you'd once walked a factory floor.",
-      prompt: "She asks: 'So what exactly are you going to tell my plant managers that I haven't already told them for the last 20 years?' Write or speak your answer before reading the debrief.",
-      debrief: [
-        "Strong answers concede ground on the exact point of challenge ('I won't pretend to know your process like you do') before making any claim.",
-        "Strong answers translate into her register — 'lugging something back and forth,' not 'workflow friction.' She told you the register two minutes ago. Use the data people hand you.",
-        "Watch the failure edge: referencing her age or tenure back at her, however warmly, reads as patronizing from someone younger. Perceptive is invisible; tailoring you can see is flattery.",
-        "She asked a literal question. If you answered a deeper one instead — 'why trust me' — that can work, but know you did it, and keep a literal answer ready for the follow-up.",
-      ],
-    },
+    caseStudy: null,
     reflection: "This week, catch one moment where you almost said something other than what you meant in order to be liked. Don't fix it — just notice the pull. The line between translating and bending only becomes visible once you've felt it.",
   },
   {
@@ -537,6 +532,27 @@ function P({ children, italic, style }) {
   );
 }
 
+function TrustTriangleDiagram() {
+  const dot = { fill: T.ink };
+  const label = {
+    fontFamily: T.serif, fontSize: 12, letterSpacing: "2px",
+    fill: T.muted,
+  };
+  return (
+    <div style={{ display: "flex", justifyContent: "center", margin: "4px 0 28px" }}>
+      <svg viewBox="0 0 300 230" width={270} height={207}>
+        <polygon points="45,35 255,35 150,195" fill="none" stroke={T.line} strokeWidth="1.5" />
+        <circle cx="45" cy="35" r="4" style={dot} />
+        <circle cx="255" cy="35" r="4" style={dot} />
+        <circle cx="150" cy="195" r="4" style={dot} />
+        <text x="45" y="20" textAnchor="middle" style={label}>PATHOS</text>
+        <text x="255" y="20" textAnchor="middle" style={label}>ETHOS</text>
+        <text x="150" y="220" textAnchor="middle" style={label}>LOGOS</text>
+      </svg>
+    </div>
+  );
+}
+
 function WeekView({ week, state, onBack, onToggleDone, onSaveReflection, onNav }) {
   const w = WEEKS[week - 1];
   const isDone = (state.completed || []).includes(week);
@@ -562,34 +578,51 @@ function WeekView({ week, state, onBack, onToggleDone, onSaveReflection, onNav }
       </p>
 
       <Section label="Framework">
-        {w.framework.map((para, i) => <P key={i}>{para}</P>)}
+        {w.framework.map((para, i) => (
+          <div key={i}>
+            <P>{para}</P>
+            {w.diagram === "trustTriangle" && i === w.diagramAfter && <TrustTriangleDiagram />}
+          </div>
+        ))}
       </Section>
 
       <Section label="Example">
-        <P>{w.example.what}</P>
-        <P italic style={{ color: T.muted }}>What to watch for: {w.example.watchFor}</P>
-        {w.example.link && (
-          <a href={w.example.link} target="_blank" rel="noreferrer" style={{
-            fontFamily: T.serif, fontSize: 14.5, color: T.accent,
-          }}>Find the clip →</a>
+        {w.example ? (
+          <>
+            <P>{w.example.what}</P>
+            <P italic style={{ color: T.muted }}>What to watch for: {w.example.watchFor}</P>
+            {w.example.link && (
+              <a href={w.example.link} target="_blank" rel="noreferrer" style={{
+                fontFamily: T.serif, fontSize: 14.5, color: T.accent,
+              }}>Find the clip →</a>
+            )}
+          </>
+        ) : (
+          <P italic style={{ color: T.muted }}>Under construction.</P>
         )}
       </Section>
 
       <Section label="Case">
-        <div style={{
-          background: T.paper, border: `1px solid ${T.line}`, borderRadius: 3,
-          padding: "26px 28px", marginBottom: 22,
-        }}>
-          <P style={{ marginBottom: 14 }}>{w.caseStudy.setup}</P>
-          <P italic style={{ margin: 0, color: T.accent }}>{w.caseStudy.prompt}</P>
-        </div>
-        <Label style={{ marginBottom: 14 }}>Debrief — read after you've answered</Label>
-        {w.caseStudy.debrief.map((d, i) => (
-          <div key={i} style={{ display: "flex", gap: 12, marginBottom: 12 }}>
-            <span style={{ fontFamily: T.serif, color: T.accent, fontSize: 15 }}>·</span>
-            <P style={{ margin: 0, fontSize: 15.5 }}>{d}</P>
-          </div>
-        ))}
+        {w.caseStudy ? (
+          <>
+            <div style={{
+              background: T.paper, border: `1px solid ${T.line}`, borderRadius: 3,
+              padding: "26px 28px", marginBottom: 22,
+            }}>
+              <P style={{ marginBottom: 14 }}>{w.caseStudy.setup}</P>
+              <P italic style={{ margin: 0, color: T.accent }}>{w.caseStudy.prompt}</P>
+            </div>
+            <Label style={{ marginBottom: 14 }}>Debrief — read after you've answered</Label>
+            {w.caseStudy.debrief.map((d, i) => (
+              <div key={i} style={{ display: "flex", gap: 12, marginBottom: 12 }}>
+                <span style={{ fontFamily: T.serif, color: T.accent, fontSize: 15 }}>·</span>
+                <P style={{ margin: 0, fontSize: 15.5 }}>{d}</P>
+              </div>
+            ))}
+          </>
+        ) : (
+          <P italic style={{ color: T.muted }}>Under construction.</P>
+        )}
       </Section>
 
       <Section label="Reflection — carry this for the week">
