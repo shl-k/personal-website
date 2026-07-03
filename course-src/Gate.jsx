@@ -29,16 +29,11 @@ function unlock() {
 function Shell({ children }) {
   return (
     <div style={{
-      minHeight: "100vh", background: T.canvas, display: "flex",
-      alignItems: "center", justifyContent: "center", padding: 24,
+      maxWidth: 420, width: "100%", margin: "40px auto", textAlign: "center",
+      background: T.paper, border: `1px solid ${T.line}`, borderRadius: 4,
+      padding: "48px 36px", boxSizing: "border-box",
     }}>
-      <div style={{
-        maxWidth: 420, width: "100%", textAlign: "center",
-        background: T.paper, border: `1px solid ${T.line}`, borderRadius: 4,
-        padding: "48px 36px",
-      }}>
-        {children}
-      </div>
+      {children}
     </div>
   );
 }
@@ -67,8 +62,9 @@ function PasswordGate({ onUnlock }) {
         The Silver Tongue
       </h1>
       <p style={{ fontFamily: T.serif, fontSize: 15.5, color: T.ink, lineHeight: 1.6, margin: "0 0 28px" }}>
-        This one's semi-private. If you know the password, come in. If you
-        don't, well — the front door isn't the only door.
+        I've received enough requests over the years on how I approach sales
+        and presentations, so I've created a course to share everything I've
+        learned. I update it monthly — hope it's helpful!
       </p>
       <input
         type="password"

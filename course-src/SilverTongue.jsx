@@ -6,14 +6,14 @@ import { useState, useEffect, useCallback } from "react";
    ———————————————————————————————————————————————— */
 
 export const T = {
-  canvas: "#F1EBDF",
-  paper: "#FBF8F1",
-  ink: "#211D18",
-  muted: "#7A7166",
-  line: "#DCD3C3",
-  accent: "#35523F",
-  accentSoft: "#E7EAE0",
-  serif: "'Palatino Linotype', Palatino, 'Book Antiqua', 'Iowan Old Style', Georgia, serif",
+  canvas: "transparent",
+  paper: "#e0e0e0",
+  ink: "#222222",
+  muted: "#555555",
+  line: "#888888",
+  accent: "#111111",
+  accentSoft: "#cfcfcf",
+  serif: "'VT323', 'IBM Plex Mono', 'Monaco', 'Menlo', 'Consolas', 'Chicago', 'Geneva', 'Arial', monospace",
 };
 
 const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII"];
@@ -682,7 +682,7 @@ export default function SilverTongue() {
 
   if (!state || view.page === "loading") {
     return (
-      <div style={{ minHeight: "100vh", background: T.canvas, display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <div style={{ minHeight: 400, display: "flex", alignItems: "center", justifyContent: "center" }}>
         <div style={{ fontFamily: T.serif, fontStyle: "italic", color: T.muted }}>Opening the book…</div>
       </div>
     );
@@ -705,7 +705,7 @@ export default function SilverTongue() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: T.canvas }}>
+    <div>
       {view.page === "onboarding" && <Onboarding onDone={onOnboardDone} />}
       {view.page === "map" && (
         <MapView
