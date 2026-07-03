@@ -29,9 +29,8 @@ function unlock() {
 function Shell({ children }) {
   return (
     <div style={{
-      maxWidth: 420, width: "100%", margin: "40px auto", textAlign: "center",
-      background: T.paper, border: `1px solid ${T.line}`, borderRadius: 4,
-      padding: "48px 36px", boxSizing: "border-box",
+      maxWidth: 420, width: "100%", margin: "0 auto", textAlign: "center",
+      padding: "56px 0", boxSizing: "border-box",
     }}>
       {children}
     </div>
@@ -76,7 +75,7 @@ function PasswordGate({ onUnlock }) {
         style={{
           fontFamily: T.serif, fontSize: 16, padding: "10px 14px", width: "100%",
           maxWidth: 240, border: `1px solid ${T.line}`, borderRadius: 2,
-          background: T.canvas, color: T.ink, textAlign: "center", outline: "none",
+          background: T.paper, color: T.ink, textAlign: "center", outline: "none",
           boxSizing: "border-box",
         }}
       />

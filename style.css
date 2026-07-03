@@ -159,7 +159,7 @@ body {
     justify-content: flex-end;  /* Align items to the right */
     align-items: center;  /* Center items vertically */
     gap: 48px;  /* Space between columns */
-    margin-top: 48px;  /* Top margin */
+    margin-top: 20px;  /* Top margin */
     width: 100%;  /* Full width */
 }
 

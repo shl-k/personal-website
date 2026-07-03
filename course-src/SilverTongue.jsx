@@ -264,29 +264,6 @@ const WEEKS = [
   },
 ];
 
-/* ———————————— ROUTING ———————————— */
-
-const WEEK_KEYWORDS = [
-  [1, ["trust", "ethic", "honest", "manipulat", "basics", "start", "foundation", "triangle"]],
-  [2, ["expert", "ally", "status", "read the room", "governing", "posture", "concede", "assert"]],
-  [3, ["read people", "body language", "diagnos", "quadrant", "style", "fast read", "cold read", "notice"]],
-  [4, ["authority", "credib", "stat", "framework", "cite", "borrow", "data"]],
-  [5, ["mirror", "parrot", "translate", "mimic", "salesy", "performative", "language match", "phrase"]],
-  [6, ["email", "writ", "cold outreach", "subject line", "message", "text"]],
-  [7, ["story", "star", "behavioral", "interview answer", "narrative", "tension", "image"]],
-  [8, ["hard question", "hostile", "pressure", "frame", "capstone", "pitch", "q&a", "grill"]],
-];
-
-function keywordRoute(text) {
-  const lower = text.toLowerCase();
-  let best = null, bestHits = 0;
-  for (const [week, words] of WEEK_KEYWORDS) {
-    const hits = words.filter((w) => lower.includes(w)).length;
-    if (hits > bestHits) { bestHits = hits; best = week; }
-  }
-  return best;
-}
-
 /* ———————————— STORAGE ———————————— */
 
 const SKEY = "silver_tongue_state_v1";
@@ -345,23 +322,24 @@ function Btn({ children, onClick, primary, disabled, style }) {
 
 /* ———————————— ONBOARDING ———————————— */
 
+const HOW_IT_WORKS = [
+  {
+    title: "Eight chapters, in order",
+    body: "Each one builds on the last — a governing read, then six moves, then a capstone that puts them all under pressure. Start at the top and work down.",
+  },
+  {
+    title: "Four parts per chapter",
+    body: "Framework, a worked example, a case study, and a reflection to carry with you through the week.",
+  },
+  {
+    title: "Your pace, saved as you go",
+    body: "Mark a chapter complete when you're ready. Come back anytime — your progress is saved right here in this browser.",
+  },
+];
+
 function Onboarding({ onDone }) {
   const [name, setName] = useState("");
-  const [want, setWant] = useState("");
-  const [stage, setStage] = useState(0); // 0 name, 1 want, 2 routing result
-  const [routing, setRouting] = useState(false);
-  const [route, setRoute] = useState(null);
-
-  const doRoute = () => {
-    setRouting(true);
-    const kw = keywordRoute(want);
-    const result = kw
-      ? { week: kw, why: "Based on what you described, this chapter is the closest fit." }
-      : { week: 1, why: "When in doubt, the foundations — the line and the triangle underneath everything else." };
-    setRoute(result);
-    setRouting(false);
-    setStage(2);
-  };
+  const [stage, setStage] = useState(0); // 0 name, 1 how it works
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", padding: "72px 24px", textAlign: "center" }}>
@@ -399,44 +377,29 @@ function Onboarding({ onDone }) {
 
       {stage === 1 && (
         <div>
-          <p style={{ fontFamily: T.serif, fontSize: 17, color: T.ink, lineHeight: 1.65, marginBottom: 24 }}>
-            {name.trim()}, in a sentence or two — what do you most want to get better at?
-            A situation that went sideways, a skill you envy in someone else, anything real.
+          <p style={{ fontFamily: T.serif, fontSize: 17, color: T.ink, lineHeight: 1.65, marginBottom: 36 }}>
+            Here's how this works, {name.trim()}.
           </p>
-          <textarea
-            value={want}
-            onChange={(e) => setWant(e.target.value)}
-            placeholder={'e.g. "I over-prepare for pitches and come off rehearsed" or "cold emails nobody answers"'}
-            rows={4}
-            style={{
-              fontFamily: T.serif, fontSize: 16, padding: 14, width: "100%", maxWidth: 480,
-              border: `1px solid ${T.line}`, borderRadius: 2, background: T.paper,
-              color: T.ink, lineHeight: 1.6, outline: "none", resize: "vertical",
-            }}
-          />
-          <div style={{ marginTop: 24, display: "flex", gap: 14, justifyContent: "center" }}>
-            <Btn onClick={() => onDone(name.trim(), null)}>Skip — show me the map</Btn>
-            <Btn primary disabled={!want.trim() || routing} onClick={doRoute}>
-              {routing ? "Reading…" : "Find my starting point"}
-            </Btn>
+          <div style={{ textAlign: "left", maxWidth: 440, margin: "0 auto" }}>
+            {HOW_IT_WORKS.map((step, i) => (
+              <div key={step.title} style={{ display: "flex", gap: 18, marginBottom: 28 }}>
+                <div style={{
+                  width: 32, minWidth: 32, height: 32, borderRadius: "50%",
+                  border: `1px solid ${T.line}`, background: T.paper, color: T.ink,
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: T.serif, fontSize: 15,
+                }}>{i + 1}</div>
+                <div>
+                  <div style={{ fontFamily: T.serif, fontSize: 17, color: T.ink }}>{step.title}</div>
+                  <div style={{ fontFamily: T.serif, fontSize: 15, color: T.muted, marginTop: 4, lineHeight: 1.55 }}>
+                    {step.body}
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
-        </div>
-      )}
-
-      {stage === 2 && route && (
-        <div>
-          <Label style={{ marginBottom: 14 }}>Your starting point</Label>
-          <div style={{
-            fontFamily: T.serif, fontSize: 26, color: T.ink, marginBottom: 10,
-          }}>
-            {ROMAN[route.week - 1]}. {WEEKS[route.week - 1].title}
-          </div>
-          <p style={{ fontFamily: T.serif, fontStyle: "italic", fontSize: 16.5, color: T.muted, lineHeight: 1.65, maxWidth: 440, margin: "0 auto 32px" }}>
-            {route.why}
-          </p>
-          <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
-            <Btn onClick={() => onDone(name.trim(), null)}>See the whole map first</Btn>
-            <Btn primary onClick={() => onDone(name.trim(), route.week)}>Start there</Btn>
+          <div style={{ marginTop: 12 }}>
+            <Btn primary onClick={() => onDone(name.trim(), null)}>Enter the course</Btn>
           </div>
         </div>
       )}
@@ -646,11 +609,11 @@ function WeekView({ week, state, onBack, onToggleDone, onSaveReflection, onNav }
       </Section>
 
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12 }}>
-        <Btn onClick={() => week > 1 && onNav(week - 1)} disabled={week === 1}>← {week > 1 ? WEEKS[week - 2].title : ""}</Btn>
+        {week > 1 ? <Btn onClick={() => onNav(week - 1)}>← {WEEKS[week - 2].title}</Btn> : <div />}
         <Btn primary onClick={() => onToggleDone(week)}>
           {isDone ? "✓ Complete — undo" : "Mark chapter complete"}
         </Btn>
-        <Btn onClick={() => week < 8 && onNav(week + 1)} disabled={week === 8}>{week < 8 ? WEEKS[week].title : ""} →</Btn>
+        {week < 8 ? <Btn onClick={() => onNav(week + 1)}>{WEEKS[week].title} →</Btn> : <div />}
       </div>
     </div>
   );

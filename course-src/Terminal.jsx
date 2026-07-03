@@ -32,15 +32,15 @@ export default function TerminalShell({ title, children }) {
 
   return (
     <div style={{
-      minHeight: "100vh", background: "#131313",
-      display: "flex", justifyContent: "center",
-      padding: "40px 12px", boxSizing: "border-box",
+      minHeight: "100vh", margin: 0, background: "#131313",
+      display: "flex", justifyContent: "center", alignItems: "center",
+      boxSizing: "border-box",
     }}>
       <div style={{
-        width: 700, maxWidth: "98vw", minWidth: 260, height: "fit-content",
+        width: 700, maxWidth: "98vw", minWidth: 260,
         background: "#a0a0a0", border: "2px solid #888", borderRadius: 12,
         boxShadow: "0 0 24px #0008", minHeight: 500,
-        padding: "0 0 24px 0", position: "relative",
+        padding: "0 0 24px 0", position: "relative", margin: "24px 0",
         backgroundImage: PIXEL_GRID,
         fontFamily: MONO,
       }}>
