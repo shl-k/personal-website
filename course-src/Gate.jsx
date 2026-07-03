@@ -12,6 +12,13 @@ import { T } from "./SilverTongue.jsx";
 const GATE_KEY = "silver_tongue_gate_v1";
 const SECRET = "silvertongue";
 
+const MISS_MESSAGES = [
+  "Not quite.",
+  "Still not it.",
+  "Hm. What if there was a way in without the password...",
+  "Maybe you should just email sdp.",
+];
+
 function checkStored() {
   try {
     const raw = window.localStorage.getItem(GATE_KEY);
@@ -91,9 +98,7 @@ function PasswordGate({ onUnlock }) {
       </div>
       {miss > 0 && (
         <p style={{ fontFamily: T.serif, fontStyle: "italic", fontSize: 13.5, color: T.muted, marginTop: 20 }}>
-          {miss < 3
-            ? "Not quite."
-            : "Still not it. This is a very casual lock, by the way — a resourceful person could find another way in."}
+          {MISS_MESSAGES[(miss - 1) % MISS_MESSAGES.length]}
         </p>
       )}
     </Shell>

@@ -343,21 +343,16 @@ function Onboarding({ onDone }) {
 
   return (
     <div style={{ maxWidth: 560, margin: "0 auto", padding: "72px 24px", textAlign: "center" }}>
-      <Label style={{ marginBottom: 20 }}>An eight-week course</Label>
       <h1 style={{ fontFamily: T.serif, fontWeight: 400, fontSize: 46, margin: "0 0 14px", color: T.ink, letterSpacing: "-0.01em" }}>
         The Silver Tongue
       </h1>
       <p style={{ fontFamily: T.serif, fontStyle: "italic", fontSize: 18, color: T.muted, margin: "0 0 48px" }}>
-        Say the true thing in the language they can hear.
+        How do you speak so that people listen?
       </p>
 
       {stage === 0 && (
         <div>
-          <p style={{ fontFamily: T.serif, fontSize: 17, color: T.ink, lineHeight: 1.65 }}>
-            Welcome. This course teaches one craft: reading how a person wants to be
-            spoken to, and translating your message — never bending it — into that register.
-          </p>
-          <p style={{ fontFamily: T.serif, fontSize: 17, color: T.ink, margin: "18px 0 32px" }}>What should we call you?</p>
+          <p style={{ fontFamily: T.serif, fontSize: 17, color: T.ink, margin: "0 0 32px" }}>What should we call you?</p>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}

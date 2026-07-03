@@ -50,9 +50,22 @@ export default function TerminalShell({ title, children }) {
           margin: "0 0 16px 0", display: "flex",
           justifyContent: "space-between", alignItems: "center",
         }}>
-          <span style={{ fontFamily: VT, fontSize: 16, fontWeight: "bold", color: "#222", letterSpacing: 1 }}>
-            {title}
-          </span>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <a
+              href="/"
+              title="Back to the main site"
+              style={{
+                width: 20, height: 20, borderRadius: "50%",
+                background: "#b0b0b0", border: "1.5px solid #888",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                color: "#444", textDecoration: "none", boxShadow: "0 1px 2px #8882",
+                fontFamily: VT, fontSize: 13, lineHeight: 1,
+              }}
+            >←</a>
+            <span style={{ fontFamily: VT, fontSize: 16, fontWeight: "bold", color: "#222", letterSpacing: 1 }}>
+              {title}
+            </span>
+          </div>
           <span style={{ fontFamily: VT, fontSize: 14, color: "#444" }}>{clock}</span>
         </div>
         <div style={{ padding: "0 32px" }}>
