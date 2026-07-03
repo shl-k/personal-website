@@ -60,6 +60,10 @@ const MOVES = [
 
 /* ———————————— THE EIGHT WEEKS ———————————— */
 
+// Only chapters up to this number are unlocked while the rest of the
+// content is still being written. Bump this as more chapters ship.
+const UNLOCKED_THROUGH = 1;
+
 const WEEKS = [
   {
     n: 1,
@@ -436,7 +440,7 @@ function MapView({ state, onOpenWeek, onOpenMoves }) {
         }} />
         {WEEKS.map((w) => {
           const isDone = done.includes(w.n);
-          const locked = w.n !== 1;
+          const locked = w.n > UNLOCKED_THROUGH;
           return (
             <div
               key={w.n}
@@ -647,7 +651,7 @@ function WeekView({ week, state, onBack, onToggleDone, onSaveReflection, onNav }
         <Btn primary onClick={() => onToggleDone(week)}>
           {isDone ? "✓ Complete — undo" : "Mark chapter complete"}
         </Btn>
-        {week < 8 ? <Btn onClick={() => onNav(week + 1)}>{WEEKS[week].title} →</Btn> : <div />}
+        {week < UNLOCKED_THROUGH ? <Btn onClick={() => onNav(week + 1)}>{WEEKS[week].title} →</Btn> : <div />}
       </div>
     </div>
   );
