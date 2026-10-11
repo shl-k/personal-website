@@ -713,7 +713,7 @@ function toast(text) {
 // ---------- Sign-in + sync (Supabase) ----------
 // Signed in as the owner, settings and chats sync across devices (table bible_state).
 // Signed out, everything stays in this browser only.
-const SYNC_KEYS = ["ref", "version", "textSize", "recents", "messages"];
+const SYNC_KEYS = ["ref", "version", "textSize", "recents", "messages", "bible_name"];
 const SBC = window.SUPABASE_CONFIG;
 const sb = SBC && window.supabase ? window.supabase.createClient(SBC.url, SBC.anonKey) : null;
 const authReady = sb ? sb.auth.getSession() : Promise.resolve({ data: { session: null } }); // also reads a sign-in link's #access_token
@@ -730,7 +730,7 @@ async function pushSync() {
   if (!user) return;
   const { error } = await sb.from("bible_state").upsert({
     user_id: user.id,
-    state: { ref: store.get("ref", ref), version: store.get("version", version), textSize: store.get("textSize", DEFAULT_SIZE), recents: store.get("recents", []) },
+    state: { ref: store.get("ref", ref), version: store.get("version", version), textSize: store.get("textSize", DEFAULT_SIZE), name: store.get("bible_name", ""), recents: store.get("recents", []) },
     messages: store.get("messages", []),
     updated_at: new Date(Number(store.get("localUpdatedAt", Date.now()))).toISOString(),
   });
@@ -749,6 +749,7 @@ async function pullSync() {
     if (st.ref) localStorage.setItem("ref", JSON.stringify(st.ref));
     if (st.version) localStorage.setItem("version", JSON.stringify(st.version));
     if (st.textSize != null) localStorage.setItem("textSize", JSON.stringify(clampSize(st.textSize)));
+    if (st.name) localStorage.setItem("bible_name", JSON.stringify(String(st.name).slice(0, 40)));
     if (st.recents) localStorage.setItem("recents", JSON.stringify(st.recents));
     localStorage.setItem("messages", JSON.stringify(data.messages || []));
     localStorage.setItem("localUpdatedAt", String(new Date(data.updated_at).getTime()));
@@ -870,18 +871,18 @@ setInterval(tickClock, 1000);
   const params = new URLSearchParams(location.search);
   if (params.has("me")) store.set("localAI", true);
   if (params.has("notme")) store.set("localAI", false);
+  user = auth?.session?.user || null;
   track("visit");
+  // Signed-in readers bring their name (and chats) from their account, so only ask if it's still unknown.
+  if (await pullSync()) textSize = clampSize(store.get("textSize", DEFAULT_SIZE));
   let name = store.get("bible_name", "");
   if (!name && !IS_LOCAL) {
     name = await askForName();
     track("onboard_done", name);
   } else if (name) {
-    track("identify", name);
+    track("identify", name); // also links a signed-in reader's email to their name in /stats
   }
-  user = auth?.session?.user || null;
-  if (user) track("identify", store.get("bible_name", "") || null); // links this reader's email to their name in /stats
   const hadHash = !!readHash();
-  if (await pullSync()) textSize = clampSize(store.get("textSize", DEFAULT_SIZE));
   renderAccount();
   applySize();
   [versions, aiOn] = await Promise.all([probeVersions(), detectAi()]);
