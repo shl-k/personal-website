@@ -120,7 +120,7 @@ async function fetchChapter(r, v) {
 // The open chapter as plain text with verse numbers, sent to Claude as context.
 function chapterPlainText() {
   const clone = chapterEl.cloneNode(true);
-  clone.querySelectorAll("h1, .notice, .yv-n, .note, .r, [data-verse-footnote]").forEach((n) => n.remove());
+  clone.querySelectorAll("h1, .notice, .yv-n, .note, .r, [data-verse-footnote], .note-mark").forEach((n) => n.remove());
   clone.querySelectorAll(".yv-vlbl").forEach((n) => (n.textContent = ` ${n.textContent} `));
   clone.querySelectorAll(".s1, .s2, .s, .yv-h, .heading").forEach((n) => (n.textContent = `\n\n[${n.textContent}]\n`));
   clone.querySelectorAll("div, p").forEach((n) => n.append("\n"));
@@ -189,6 +189,7 @@ function parseReference(text, currentBook) {
 // ---------- Rendering the chapter ----------
 async function loadChapter(verse) {
   hidePop();
+  if (typeof closeNote === "function" && !$("noteCard").hidden) closeNote();
   chapterEl.innerHTML = '<p class="loading">Loading…</p>';
   let data;
   try {
@@ -212,6 +213,7 @@ async function loadChapter(verse) {
     chapter.html;
   fixSpacing(chapterEl);
   tagVerses();
+  renderAnnotations();
   track("chapter_open", ref);
   $("copyright").textContent = chapter.copyright;
   markDiscussed();
@@ -297,6 +299,144 @@ function fixSpacing(root) {
   }
 }
 
+// ---------- Highlights & notes ----------
+// Stored per verse: annotations["JHN.3"]["16"] = { color: "honey" | "sage" | "sky" | "rose", note: "…" }.
+// Saved in this browser; synced with the reader's account when signed in.
+const HL_COLORS = ["honey", "sage", "sky", "rose"];
+function annotationFor(v, r = ref) { return (store.get("annotations", {})[r] || {})[v] || {}; }
+function setAnnotation(verses, patch) {
+  const all = store.get("annotations", {});
+  const ch = all[ref] || {};
+  for (const v of verses) {
+    const next = { ...(ch[v] || {}), ...patch };
+    if (!next.color) delete next.color;
+    if (!next.note) delete next.note;
+    if (Object.keys(next).length) ch[v] = next; else delete ch[v];
+  }
+  if (Object.keys(ch).length) all[ref] = ch; else delete all[ref];
+  store.set("annotations", all);
+  renderAnnotations();
+}
+function renderAnnotations() {
+  chapterEl.querySelectorAll(".note-mark").forEach((m) => m.remove());
+  const ch = store.get("annotations", {})[ref] || {};
+  const lastOfVerse = {};
+  chapterEl.querySelectorAll(".content").forEach((c) => {
+    const a = ch[c.dataset.v] || {};
+    if (a.color && HL_COLORS.includes(a.color)) c.dataset.hl = a.color; else delete c.dataset.hl;
+    c.classList.toggle("has-note", !!a.note);
+    lastOfVerse[c.dataset.v] = c;
+  });
+  for (const [v, a] of Object.entries(ch)) {
+    if (!a.note || !lastOfVerse[v]) continue;
+    const mark = document.createElement("span");
+    mark.className = "note-mark";
+    mark.dataset.v = v;
+    mark.textContent = "✎";
+    mark.title = "Note";
+    lastOfVerse[v].after(mark);
+  }
+}
+
+selPop.querySelectorAll(".hl-dot").forEach((d) => d.addEventListener("click", () => {
+  if (!pendingSel?.verses.length) return;
+  setAnnotation(pendingSel.verses, { color: d.dataset.color });
+  hidePop();
+  window.getSelection().removeAllRanges();
+}));
+$("hlClear").addEventListener("click", () => {
+  if (!pendingSel?.verses.length) return;
+  setAnnotation(pendingSel.verses, { color: null });
+  hidePop();
+  window.getSelection().removeAllRanges();
+});
+$("noteBtn").addEventListener("click", () => {
+  if (!pendingSel?.verses.length) return;
+  const verses = pendingSel.verses;
+  const rect = pendingSel.rect;
+  hidePop();
+  window.getSelection().removeAllRanges();
+  openNote(verses[verses.length - 1], rect, { edit: true, verses });
+});
+
+// Note card: hover shows it, click pins it (stays until closed), Edit/Delete inside.
+let noteState = { v: null, verses: [], pinned: false, hideTimer: null };
+function placeCard(rect) {
+  const card = $("noteCard");
+  const w = card.offsetWidth, h = card.offsetHeight;
+  let left = Math.min(Math.max(rect.left, 8), innerWidth - w - 8);
+  let top = rect.bottom + 8;
+  if (top + h > innerHeight - 8) top = Math.max(8, rect.top - h - 8);
+  card.style.left = left + "px";
+  card.style.top = top + "px";
+}
+function openNote(v, rect, { edit = false, pin = false, verses = null } = {}) {
+  clearTimeout(noteState.hideTimer);
+  const a = annotationFor(v);
+  noteState = { v, verses: verses || [v], pinned: pin || edit, hideTimer: null };
+  const first = noteState.verses[0], last = noteState.verses[noteState.verses.length - 1];
+  $("noteRef").textContent = `Note · ${chapter.title}:${first}${last !== first ? "–" + last : ""}`;
+  $("noteText").textContent = a.note || "";
+  $("noteView").hidden = edit || !a.note;
+  $("noteForm").hidden = !(edit || !a.note);
+  $("noteInput").value = a.note || "";
+  $("noteCard").classList.toggle("pinned", noteState.pinned);
+  $("noteCard").hidden = false;
+  placeCard(rect);
+  chapterEl.querySelectorAll(".note-mark").forEach((m) => m.classList.toggle("active", m.dataset.v === String(v) && noteState.pinned));
+  if (edit) $("noteInput").focus();
+}
+function closeNote() {
+  $("noteCard").hidden = true;
+  noteState = { v: null, verses: [], pinned: false, hideTimer: null };
+  chapterEl.querySelectorAll(".note-mark.active").forEach((m) => m.classList.remove("active"));
+}
+const noteTarget = (el) => el.closest(".note-mark") || el.closest(".content.has-note");
+chapterEl.addEventListener("mouseover", (e) => {
+  const t = noteTarget(e.target);
+  if (!t || noteState.pinned) return;
+  openNote(Number(t.dataset.v), t.getBoundingClientRect());
+});
+chapterEl.addEventListener("mouseout", (e) => {
+  const t = noteTarget(e.target);
+  if (!t || noteState.pinned) return;
+  noteState.hideTimer = setTimeout(() => { if (!noteState.pinned) closeNote(); }, 250);
+});
+$("noteCard").addEventListener("mouseenter", () => clearTimeout(noteState.hideTimer));
+$("noteCard").addEventListener("mouseleave", () => { if (!noteState.pinned) closeNote(); });
+chapterEl.addEventListener("click", (e) => {
+  const t = noteTarget(e.target);
+  if (!t || !window.getSelection().isCollapsed) return; // don't fight text selection
+  openNote(Number(t.dataset.v), t.getBoundingClientRect(), { pin: true });
+});
+document.addEventListener("mousedown", (e) => {
+  if (!$("noteCard").hidden && noteState.pinned && !e.target.closest("#noteCard, .note-mark, .content.has-note")) closeNote();
+});
+$("noteClose").addEventListener("click", closeNote);
+$("noteEdit").addEventListener("click", () => {
+  noteState.pinned = true;
+  $("noteCard").classList.add("pinned");
+  $("noteView").hidden = true;
+  $("noteForm").hidden = false;
+  $("noteInput").focus();
+});
+$("noteDelete").addEventListener("click", () => {
+  setAnnotation(noteState.verses, { note: null });
+  closeNote();
+  toast("Note deleted");
+});
+$("noteCancel").addEventListener("click", () => {
+  if (annotationFor(noteState.v).note) { $("noteForm").hidden = true; $("noteView").hidden = false; } else closeNote();
+});
+$("noteForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const text = $("noteInput").value.trim().slice(0, 2000);
+  setAnnotation(noteState.verses, { note: text || null });
+  closeNote();
+  if (text) toast("Note saved");
+});
+$("readerScroll").addEventListener("scroll", () => { if (!noteState.pinned) closeNote(); }, { passive: true });
+
 // Wrap every run of scripture text in <span class="content" data-v="N">, tracking
 // the current verse from the verse-number labels, so selections map to verses.
 function tagVerses() {
@@ -338,7 +478,7 @@ function readSelection() {
   if (!inChapter && !inChat) return null;
 
   const frag = range.cloneContents();
-  frag.querySelectorAll(".yv-vlbl, .label, .yv-n, .note, .r, [data-verse-footnote]").forEach((n) => n.remove());
+  frag.querySelectorAll(".yv-vlbl, .label, .yv-n, .note, .r, [data-verse-footnote], .note-mark").forEach((n) => n.remove());
   frag.querySelectorAll("div, p").forEach((d) => d.append(" ")); // keep poetry lines apart
   const text = frag.textContent.replace(/\s+/g, " ").trim();
   if (!text) return null;
@@ -361,10 +501,17 @@ function refFor(verses) {
 }
 
 function showPop() {
-  if (!aiOn) return;
   const s = readSelection();
   if (!s) return hidePop();
+  const canMark = s.verses.length > 0; // highlights/notes only on Bible text, not chat
+  if (!aiOn && !canMark) return hidePop();
   pendingSel = s;
+  $("markGroup").hidden = !canMark;
+  $("aiGroup").hidden = !aiOn;
+  $("aiDivider").hidden = !(aiOn && canMark);
+  const cur = canMark ? annotationFor(s.verses[0]).color : null;
+  selPop.querySelectorAll(".hl-dot").forEach((d) => d.classList.toggle("current", d.dataset.color === cur));
+  $("hlClear").hidden = !s.verses.some((v) => annotationFor(v).color);
   selPop.hidden = false;
   const w = selPop.offsetWidth;
   const x = Math.min(Math.max(s.rect.left + s.rect.width / 2, w / 2 + 8), innerWidth - w / 2 - 8);
@@ -704,7 +851,7 @@ $("expandBtn").addEventListener("click", () => {
 $("prevBtn").addEventListener("click", () => { const r = stepRef(ref, -1); if (r) goTo(r); });
 $("nextBtn").addEventListener("click", () => { const r = stepRef(ref, 1); if (r) goTo(r); });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") { hidePop(); toggleSizePop(false); }
+  if (e.key === "Escape") { hidePop(); toggleSizePop(false); closeNote(); }
   if (e.target.closest("input, textarea") || !chapter) return;
   if (e.key === "ArrowLeft" && stepRef(ref, -1)) goTo(stepRef(ref, -1));
   if (e.key === "ArrowRight" && stepRef(ref, 1)) goTo(stepRef(ref, 1));
@@ -731,7 +878,7 @@ function toast(text) {
 // ---------- Sign-in + sync (Supabase) ----------
 // Signed in as the owner, settings and chats sync across devices (table bible_state).
 // Signed out, everything stays in this browser only.
-const SYNC_KEYS = ["ref", "version", "textSize", "recents", "messages", "bible_name"];
+const SYNC_KEYS = ["ref", "version", "textSize", "recents", "messages", "bible_name", "annotations"];
 const SBC = window.SUPABASE_CONFIG;
 const sb = SBC && window.supabase ? window.supabase.createClient(SBC.url, SBC.anonKey) : null;
 const authReady = sb ? sb.auth.getSession() : Promise.resolve({ data: { session: null } }); // also reads a sign-in link's #access_token
@@ -748,7 +895,7 @@ async function pushSync() {
   if (!user) return;
   const { error } = await sb.from("bible_state").upsert({
     user_id: user.id,
-    state: { ref: store.get("ref", ref), version: store.get("version", version), textSize: store.get("textSize", DEFAULT_SIZE), name: store.get("bible_name", ""), recents: store.get("recents", []) },
+    state: { ref: store.get("ref", ref), version: store.get("version", version), textSize: store.get("textSize", DEFAULT_SIZE), name: store.get("bible_name", ""), annotations: store.get("annotations", {}), recents: store.get("recents", []) },
     messages: store.get("messages", []),
     updated_at: new Date(Number(store.get("localUpdatedAt", Date.now()))).toISOString(),
   });
@@ -768,6 +915,7 @@ async function pullSync() {
     if (st.version) localStorage.setItem("version", JSON.stringify(st.version));
     if (st.textSize != null) localStorage.setItem("textSize", JSON.stringify(clampSize(st.textSize)));
     if (st.name) localStorage.setItem("bible_name", JSON.stringify(String(st.name).slice(0, 40)));
+    if (st.annotations && typeof st.annotations === "object") localStorage.setItem("annotations", JSON.stringify(st.annotations));
     if (st.recents) localStorage.setItem("recents", JSON.stringify(st.recents));
     localStorage.setItem("messages", JSON.stringify(data.messages || []));
     localStorage.setItem("localUpdatedAt", String(new Date(data.updated_at).getTime()));
@@ -799,7 +947,7 @@ $("signInForm").addEventListener("submit", async (e) => {
 $("signOutBtn").addEventListener("click", async () => {
   await sb.auth.signOut();
   // Clear this browser's copy of the synced data so the next person on this device starts fresh.
-  ["messages", "recents", "ref", "localUpdatedAt", "chatOpen"].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
+  ["messages", "recents", "ref", "localUpdatedAt", "chatOpen", "annotations"].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
   location.reload();
 });
 

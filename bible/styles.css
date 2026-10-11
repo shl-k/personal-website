@@ -438,3 +438,58 @@ svg { display: block; }
 .gate-err:empty { display: none; }
 /* The divine name (Hebrew YHWH), shown as LORD in small capitals like printed Bibles */
 .scripture .nd { font-variant: small-caps; letter-spacing: .02em; }
+
+/* ---------- Highlights & notes ---------- */
+:root {
+  --hl-honey: rgba(244, 205, 82, .62);
+  --hl-sage:  rgba(143, 196, 132, .55);
+  --hl-sky:   rgba(126, 178, 230, .52);
+  --hl-rose:  rgba(234, 150, 176, .52);
+}
+/* Highlighter-pen look: color sits on the lower part of the line, and wraps cleanly across lines */
+.scripture .content[data-hl] {
+  -webkit-box-decoration-break: clone; box-decoration-break: clone;
+  padding: 0 1px; border-radius: 2px;
+}
+.scripture .content[data-hl="honey"] { background: linear-gradient(180deg, transparent 38%, var(--hl-honey) 38%, var(--hl-honey) 92%, transparent 92%); }
+.scripture .content[data-hl="sage"]  { background: linear-gradient(180deg, transparent 38%, var(--hl-sage) 38%, var(--hl-sage) 92%, transparent 92%); }
+.scripture .content[data-hl="sky"]   { background: linear-gradient(180deg, transparent 38%, var(--hl-sky) 38%, var(--hl-sky) 92%, transparent 92%); }
+.scripture .content[data-hl="rose"]  { background: linear-gradient(180deg, transparent 38%, var(--hl-rose) 38%, var(--hl-rose) 92%, transparent 92%); }
+.scripture .content.has-note { text-decoration: underline dotted #555; text-decoration-thickness: 1px; text-underline-offset: 5px; cursor: pointer; }
+.note-mark {
+  display: inline-grid; place-items: center; width: 1.25em; height: 1.25em; margin: 0 2px 0 3px;
+  vertical-align: 0.3em; border: 1px solid var(--line); border-radius: 2px; background: #fff;
+  font: calc(var(--verse-size) * 0.6) var(--mono); color: var(--ink); cursor: pointer; user-select: none; line-height: 1;
+}
+.note-mark:hover, .note-mark.active { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+.sel-pop { flex-wrap: wrap; max-width: calc(100vw - 16px); justify-content: center; }
+.sel-group { display: flex; align-items: center; }
+.hl-dot {
+  width: 20px; height: 20px; padding: 0 !important; margin: 0 3px; border-radius: 50% !important;
+  border: 2px solid rgba(255,255,255,.75) !important;
+}
+.hl-dot[data-color="honey"] { background: #f2cd55 !important; }
+.hl-dot[data-color="sage"]  { background: #8fc484 !important; }
+.hl-dot[data-color="sky"]   { background: #7eb2e6 !important; }
+.hl-dot[data-color="rose"]  { background: #ea96b0 !important; }
+.hl-dot:hover { transform: scale(1.12); border-color: #fff !important; }
+.hl-dot.current { box-shadow: 0 0 0 2px var(--ink), 0 0 0 4px #fff; }
+.hl-clear { padding: 4px !important; margin-left: 2px; opacity: .85; }
+
+.note-card {
+  position: fixed; z-index: 55; width: 300px; max-width: calc(100vw - 16px);
+  background: var(--paper); border: 1px solid var(--line); border-radius: 2px;
+  box-shadow: 0 6px 22px rgba(0,0,0,.28); font: 13px/1.55 var(--mono); color: var(--ink);
+}
+.note-card.pinned { border-color: var(--ink); }
+.note-head { display: flex; justify-content: space-between; align-items: center; padding: 7px 8px 7px 12px; border-bottom: 1px solid var(--line); background: var(--paper-2); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.note-x { border: 0; background: none; font-size: 16px; line-height: 1; color: var(--muted); padding: 0 4px; }
+.note-view, .note-edit { padding: 10px 12px 12px; }
+.note-text { margin: 0 0 10px; white-space: pre-wrap; word-wrap: break-word; }
+.note-actions { display: flex; gap: 6px; }
+.note-actions button { height: 26px; padding: 0 10px; border: 1px solid var(--line); border-radius: 2px; background: var(--paper); font: 12px var(--mono); }
+.note-actions button:hover { background: #fff; }
+.note-actions button.primary { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.note-edit textarea { width: 100%; resize: vertical; min-height: 80px; margin-bottom: 8px; padding: 8px; border: 1px solid var(--line); border-radius: 2px; background: #fff; font: 13px/1.5 var(--mono); color: var(--ink); outline: none; }
+.note-edit textarea:focus { border-color: var(--ink); }

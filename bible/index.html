@@ -210,11 +210,36 @@
 
   <!-- Floating toolbar that appears over a text selection -->
   <div class="sel-pop" id="selPop" hidden>
+    <div class="sel-group" id="markGroup">
+      <button class="hl-dot" data-color="honey" title="Highlight: honey" aria-label="Highlight honey"></button>
+      <button class="hl-dot" data-color="sage" title="Highlight: sage" aria-label="Highlight sage"></button>
+      <button class="hl-dot" data-color="sky" title="Highlight: sky" aria-label="Highlight sky"></button>
+      <button class="hl-dot" data-color="rose" title="Highlight: rose" aria-label="Highlight rose"></button>
+      <button class="hl-clear" id="hlClear" title="Remove highlight" aria-label="Remove highlight"><svg viewBox="0 0 24 24" width="13" height="13"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <span class="sel-divider"></span>
+      <button id="noteBtn"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>Note</button>
+    </div>
+    <span class="sel-divider" id="aiDivider"></span>
+    <div class="sel-group" id="aiGroup">
     <button id="whatBtn"><svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5v.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>What is this?</button>
     <span class="sel-divider"></span>
     <button id="simpleBtn"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.3zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9z"/></svg>Say it simply</button>
     <span class="sel-divider"></span>
     <button id="askBtn"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 5h16v11H9l-5 4z"/></svg>Ask…</button>
+    </div>
+  </div>
+
+  <!-- Note card: shows a verse's note on hover; click pins it; also the editor -->
+  <div class="note-card" id="noteCard" hidden>
+    <div class="note-head"><span id="noteRef">Note</span><button class="note-x" id="noteClose" aria-label="Close">×</button></div>
+    <div class="note-view" id="noteView">
+      <p class="note-text" id="noteText"></p>
+      <div class="note-actions"><button id="noteEdit">Edit</button><button id="noteDelete">Delete</button></div>
+    </div>
+    <form class="note-edit" id="noteForm" hidden>
+      <textarea id="noteInput" rows="4" maxlength="2000" placeholder="Write a note…"></textarea>
+      <div class="note-actions"><button type="submit" class="primary">Save</button><button type="button" id="noteCancel">Cancel</button></div>
+    </form>
   </div>
 
   <div class="toast" id="toast" hidden></div>
