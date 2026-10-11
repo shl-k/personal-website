@@ -641,14 +641,32 @@ function md(src) {
 }
 
 // ---------- Header controls ----------
-const SIZES = [18, 20, 22, 24, 26];
-let sizeIdx = store.get("sizeIdx", 1);
-function applySize() { document.documentElement.style.setProperty("--verse-size", SIZES[sizeIdx] + "px"); }
-$("fontBtn").addEventListener("click", () => {
-  sizeIdx = (sizeIdx + 1) % SIZES.length;
-  store.set("sizeIdx", sizeIdx);
+// Text size: the Aa button opens a slider (13–28px, default 17).
+const DEFAULT_SIZE = 17;
+const clampSize = (n) => Math.min(28, Math.max(13, Math.round(Number(n)) || DEFAULT_SIZE));
+let textSize = clampSize(store.get("textSize", DEFAULT_SIZE));
+function applySize() {
+  document.documentElement.style.setProperty("--verse-size", textSize + "px");
+  $("sizeSlider").value = textSize;
+  $("sizeValue").textContent = `${textSize}px`;
+}
+function toggleSizePop(open = $("sizePop").hidden) {
+  $("sizePop").hidden = !open;
+  $("fontBtn").setAttribute("aria-expanded", String(open));
+}
+$("fontBtn").addEventListener("click", (e) => { e.stopPropagation(); toggleSizePop(); });
+$("sizeSlider").addEventListener("input", (e) => {
+  textSize = clampSize(e.target.value);
   applySize();
-  toast(`Text size ${SIZES[sizeIdx]}px`);
+});
+$("sizeSlider").addEventListener("change", () => store.set("textSize", textSize));
+$("sizeReset").addEventListener("click", () => {
+  textSize = DEFAULT_SIZE;
+  applySize();
+  store.set("textSize", textSize);
+});
+document.addEventListener("click", (e) => {
+  if (!$("sizePop").hidden && !e.target.closest(".size-wrap")) toggleSizePop(false);
 });
 
 $("versionBtn").addEventListener("click", () => {
@@ -668,7 +686,7 @@ $("expandBtn").addEventListener("click", () => {
 $("prevBtn").addEventListener("click", () => { const r = stepRef(ref, -1); if (r) goTo(r); });
 $("nextBtn").addEventListener("click", () => { const r = stepRef(ref, 1); if (r) goTo(r); });
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") hidePop();
+  if (e.key === "Escape") { hidePop(); toggleSizePop(false); }
   if (e.target.closest("input, textarea") || !chapter) return;
   if (e.key === "ArrowLeft" && stepRef(ref, -1)) goTo(stepRef(ref, -1));
   if (e.key === "ArrowRight" && stepRef(ref, 1)) goTo(stepRef(ref, 1));
@@ -695,7 +713,7 @@ function toast(text) {
 // ---------- Sign-in + sync (Supabase) ----------
 // Signed in as the owner, settings and chats sync across devices (table bible_state).
 // Signed out, everything stays in this browser only.
-const SYNC_KEYS = ["ref", "version", "sizeIdx", "recents", "messages"];
+const SYNC_KEYS = ["ref", "version", "textSize", "recents", "messages"];
 const SBC = window.SUPABASE_CONFIG;
 const sb = SBC && window.supabase ? window.supabase.createClient(SBC.url, SBC.anonKey) : null;
 const authReady = sb ? sb.auth.getSession() : Promise.resolve({ data: { session: null } }); // also reads a sign-in link's #access_token
@@ -712,7 +730,7 @@ async function pushSync() {
   if (!user) return;
   const { error } = await sb.from("bible_state").upsert({
     user_id: user.id,
-    state: { ref: store.get("ref", ref), version: store.get("version", version), sizeIdx: store.get("sizeIdx", 1), recents: store.get("recents", []) },
+    state: { ref: store.get("ref", ref), version: store.get("version", version), textSize: store.get("textSize", DEFAULT_SIZE), recents: store.get("recents", []) },
     messages: store.get("messages", []),
     updated_at: new Date(Number(store.get("localUpdatedAt", Date.now()))).toISOString(),
   });
@@ -730,7 +748,7 @@ async function pullSync() {
   try {
     if (st.ref) localStorage.setItem("ref", JSON.stringify(st.ref));
     if (st.version) localStorage.setItem("version", JSON.stringify(st.version));
-    if (st.sizeIdx != null) localStorage.setItem("sizeIdx", JSON.stringify(st.sizeIdx));
+    if (st.textSize != null) localStorage.setItem("textSize", JSON.stringify(clampSize(st.textSize)));
     if (st.recents) localStorage.setItem("recents", JSON.stringify(st.recents));
     localStorage.setItem("messages", JSON.stringify(data.messages || []));
     localStorage.setItem("localUpdatedAt", String(new Date(data.updated_at).getTime()));
@@ -821,9 +839,16 @@ function askForName() {
       const name = $("gateName").value.trim().slice(0, 40);
       if (!name) return;
       store.set("bible_name", name);
-      $("gate").hidden = true;
-      app.hidden = false;
-      resolve(name);
+      // Step 2: tell them up front that the AI helper needs a password.
+      $("gateForm").hidden = true;
+      $("gateHello").textContent = `Welcome, ${name}.`;
+      $("gateWelcome").hidden = false;
+      $("gateStart").focus();
+      $("gateStart").addEventListener("click", () => {
+        $("gate").hidden = true;
+        app.hidden = false;
+        resolve(name);
+      }, { once: true });
     });
   });
 }
@@ -855,7 +880,7 @@ setInterval(tickClock, 1000);
   user = auth?.session?.user || null;
   if (user && SBC && user.email !== SBC.owner) user = null; // only the owner syncs
   const hadHash = !!readHash();
-  if (await pullSync()) sizeIdx = store.get("sizeIdx", 1);
+  if (await pullSync()) textSize = clampSize(store.get("textSize", DEFAULT_SIZE));
   renderAccount();
   applySize();
   [versions, aiOn] = await Promise.all([probeVersions(), detectAi()]);

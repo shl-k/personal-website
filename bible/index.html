@@ -27,8 +27,16 @@
       <form id="gateForm">
         <input id="gateName" placeholder="Your first name" autocomplete="given-name" maxlength="40" required />
         <p class="gate-note">Your first name is shared with sdp, so sdp can see who's reading.</p>
-        <button type="submit" class="gate-btn">Begin reading</button>
+        <button type="submit" class="gate-btn">Continue</button>
       </form>
+      <div class="gate-welcome" id="gateWelcome" hidden>
+        <h2 id="gateHello">Welcome.</h2>
+        <ul class="gate-points">
+          <li><strong>Reading is open to everyone.</strong> All 66 books, free.</li>
+          <li><strong>The AI study helper needs a password.</strong> Highlight any verse to ask <em>What is this?</em>, have it <em>Say it simply</em>, or ask your own question. The first time you use it, you'll be asked for a password. Ask sdp for it.</li>
+        </ul>
+        <button type="button" class="gate-btn" id="gateStart">Start reading</button>
+      </div>
     </section>
 
   <div class="app" id="app">
@@ -98,7 +106,18 @@
           <button class="circle-btn" title="Parallel" aria-label="Parallel">
             <svg viewBox="0 0 24 24" width="16" height="16"><rect x="3" y="5" width="18" height="14" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 5v14" stroke="currentColor" stroke-width="2"/></svg>
           </button>
-          <button class="circle-btn aa" id="fontBtn" title="Text size" aria-label="Text size">A<small>A</small></button>
+          <div class="size-wrap">
+            <button class="circle-btn aa" id="fontBtn" title="Text size" aria-label="Text size" aria-expanded="false">Aa</button>
+            <div class="size-pop" id="sizePop" hidden>
+              <div class="size-head"><span>Text size</span><span id="sizeValue">17px</span></div>
+              <div class="size-row">
+                <span class="size-a small" aria-hidden="true">A</span>
+                <input type="range" id="sizeSlider" min="13" max="28" step="1" value="17" aria-label="Text size" />
+                <span class="size-a big" aria-hidden="true">A</span>
+              </div>
+              <button type="button" class="size-reset" id="sizeReset">reset</button>
+            </div>
+          </div>
           <button class="chat-toggle" id="chatToggle" title="Open study chat">
             <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 5h16v11H9l-5 4z"/></svg>
             <span>Ask</span>
