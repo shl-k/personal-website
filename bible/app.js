@@ -210,6 +210,7 @@ async function loadChapter(verse) {
     `<h1>${esc(chapter.title)}</h1>` +
     (chapter.notice ? `<p class="notice">${esc(chapter.notice)}</p>` : "") +
     chapter.html;
+  fixSpacing(chapterEl);
   tagVerses();
   track("chapter_open", ref);
   $("copyright").textContent = chapter.copyright;
@@ -283,6 +284,18 @@ $("bookList").addEventListener("click", (e) => {
   toggleBookList(false);
   goTo(`${b.dataset.code}.1`);
 });
+
+// Display-only spacing fixes for a few typos in the source text (e.g. "Alvan,Manahath", "sonof" in
+// 1 Chronicles 1). Only adds missing spaces; never changes words.
+const SPACING_FIXES = [[/([,;])(?=[A-Za-z\u2018\u201C])/g, "$1 "], [/\bsonof\b/g, "son of"]];
+function fixSpacing(root) {
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    let t = n.nodeValue;
+    for (const [re, rep] of SPACING_FIXES) t = t.replace(re, rep);
+    if (t !== n.nodeValue) n.nodeValue = t;
+  }
+}
 
 // Wrap every run of scripture text in <span class="content" data-v="N">, tracking
 // the current verse from the verse-number labels, so selections map to verses.

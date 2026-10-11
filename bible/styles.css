@@ -249,10 +249,26 @@ svg { display: block; }
 }
 .scripture .s2 { font-size: 15px; }
 .scripture h1 + .s1, .scripture h1 + * > .s1:first-child { margin-top: 0; }
-.scripture .p, .scripture .m, .scripture .pi, .scripture .pmo, .scripture .nb, .scripture .li, .scripture .li1,
-.scripture .q, .scripture .q1, .scripture .q2, .scripture .q3, .scripture .qr, .scripture .qc, .scripture .d {
+/* Every text block YouVersion can send uses the reading size (lists, poetry, closings, etc.). */
+.scripture .p, .scripture .m, .scripture .pi, .scripture .pi1, .scripture .pi2, .scripture .pmo, .scripture .pm,
+.scripture .pmc, .scripture .pmr, .scripture .mi, .scripture .nb, .scripture .pc, .scripture .pr, .scripture .ph,
+.scripture .li, .scripture .li1, .scripture .li2, .scripture .li3, .scripture .li4, .scripture .lim, .scripture .lim1, .scripture .lim2,
+.scripture .q, .scripture .q1, .scripture .q2, .scripture .q3, .scripture .q4, .scripture .qr, .scripture .qc, .scripture .qm, .scripture .qm1, .scripture .qm2,
+.scripture .qa, .scripture .cls, .scripture .d {
   display: block; font-size: var(--verse-size); line-height: var(--verse-line);
 }
+/* Lists (genealogies, tribe lists): hanging indents by level, no gaps between lines */
+.scripture .li, .scripture .li1, .scripture .lim, .scripture .lim1 { padding-left: 24px; text-indent: -24px; }
+.scripture .li2, .scripture .lim2 { padding-left: 48px; text-indent: -24px; }
+.scripture .li3 { padding-left: 72px; text-indent: -24px; }
+.scripture .li4 { padding-left: 96px; text-indent: -24px; }
+.scripture :not([class^="li"]) + .li1, .scripture :not([class^="li"]) + .li { margin-top: 12px; }
+.scripture [class^="li"] + :not([class^="li"]) { margin-top: 12px; }
+.scripture .mi, .scripture .pm, .scripture .pmo { padding-left: 20px; }
+.scripture .pc, .scripture .qc { text-align: center; }
+.scripture .pr, .scripture .qr, .scripture .pmr { text-align: right; }
+.scripture .qs { font-style: italic; color: var(--muted); margin-left: 8px; } /* "Selah" */
+.scripture .cls { margin-top: 12px; }
 .scripture .d { font-style: italic; color: var(--muted); font-size: calc(var(--verse-size) - 2px); margin-bottom: 8px; }
 .scripture .p, .scripture .pi, .scripture .pmo { margin: 0 0 14px; }
 .scripture .m, .scripture .nb { margin: 0 0 14px; }
@@ -418,3 +434,5 @@ svg { display: block; }
 .gate-sent p { font: 13px/1.6 var(--mono); color: var(--ink); margin: 0 0 22px; }
 .gate-err { color: #8a1f1f !important; margin-top: 12px !important; }
 .gate-err:empty { display: none; }
+/* The divine name (Hebrew YHWH), shown as LORD in small capitals like printed Bibles */
+.scripture .nd { font-variant: small-caps; letter-spacing: .02em; }
