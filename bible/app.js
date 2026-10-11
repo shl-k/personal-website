@@ -308,6 +308,33 @@ const HL_COLORS = ["honey", "sage", "sky", "rose"];
 const HEADING_SEL = ".s1, .s, .s2, .yv-h, .heading, .ms";
 const isHeadingKey = (k) => String(k).startsWith("h");
 function annotationFor(k, r = ref) { return (store.get("annotations", {})[r] || {})[k] || {}; }
+// A note covering several verses is stored once on its first key ("anchor") with `with: [other keys]`;
+// the other keys carry `noteOf: anchor` so they're underlined but don't repeat the note.
+const anchorOf = (k, r = ref) => annotationFor(k, r).noteOf || String(k);
+const noteKeys = (k, r = ref) => { const a = anchorOf(k, r); return [a, ...(annotationFor(a, r).with || [])]; };
+
+// One-time cleanup: older saves copied a range's note onto every verse. Merge runs of
+// consecutive verses that carry the identical note into one anchored note.
+function mergeDuplicateNotes() {
+  const all = store.get("annotations", {});
+  let changed = false;
+  for (const ch of Object.values(all)) {
+    const verseKeys = Object.keys(ch).filter((k) => !isHeadingKey(k) && ch[k].note && !ch[k].with && !ch[k].noteOf).map(Number).sort((a, b) => a - b);
+    for (let i = 0; i < verseKeys.length; ) {
+      let j = i;
+      while (j + 1 < verseKeys.length && verseKeys[j + 1] === verseKeys[j] + 1 && ch[verseKeys[j + 1]].note === ch[verseKeys[i]].note) j++;
+      if (j > i) {
+        const anchor = String(verseKeys[i]);
+        const members = verseKeys.slice(i + 1, j + 1).map(String);
+        ch[anchor].with = members;
+        for (const m of members) { delete ch[m].note; ch[m].noteOf = anchor; }
+        changed = true;
+      }
+      i = j + 1;
+    }
+  }
+  if (changed) store.set("annotations", all);
+}
 
 // Give each section heading a stable key ("h" + the first verse after it) and wrap its text,
 // so it can be highlighted and noted like a verse.
@@ -331,11 +358,30 @@ function snippetFor(k) {
 function setAnnotation(keys, patch, r = ref) {
   const all = store.get("annotations", {});
   const ch = all[r] || {};
-  for (const key of keys.map(String)) {
+  keys = keys.map(String);
+  if ("note" in patch) {
+    // Notes are stored once on the first key; the rest of the range points to it.
+    const [anchor, ...rest] = keys;
+    // detach these keys from any older notes they belonged to
+    for (const k of keys) {
+      const old = ch[k] || {};
+      if (old.noteOf && ch[old.noteOf]?.with) ch[old.noteOf].with = ch[old.noteOf].with.filter((x) => !keys.includes(x));
+      if (old.with) for (const m of old.with) if (!keys.includes(m) && ch[m]) delete ch[m].noteOf;
+    }
+    for (const k of keys) { const a = { ...(ch[k] || {}) }; delete a.note; delete a.with; delete a.noteOf; ch[k] = a; }
+    if (patch.note) {
+      ch[anchor].note = patch.note;
+      if (rest.length) ch[anchor].with = rest;
+      for (const m of rest) ch[m].noteOf = anchor;
+    }
+    const { note, ...others } = patch;
+    patch = others;
+  }
+  for (const key of keys) {
     const next = { ...(ch[key] || {}), ...patch };
     if (!next.color) delete next.color;
-    if (!next.note) delete next.note;
-    if (next.color || next.note) {
+    if (!next.note) { delete next.note; delete next.with; }
+    if (next.color || next.note || next.noteOf) {
       if (r === ref) next.snip = snippetFor(key) || next.snip || "";
       next.at = Date.now();
       ch[key] = next;
@@ -353,19 +399,22 @@ function renderAnnotations() {
   const apply = (el, key) => {
     const a = ch[key] || {};
     if (a.color && HL_COLORS.includes(a.color)) el.dataset.hl = a.color; else delete el.dataset.hl;
-    el.classList.toggle("has-note", !!a.note);
+    el.classList.toggle("has-note", !!(a.note || (a.noteOf && ch[a.noteOf]?.note)));
     lastEl[key] = el;
   };
   chapterEl.querySelectorAll(".content").forEach((c) => apply(c, c.dataset.v));
   chapterEl.querySelectorAll(".hk-text").forEach((h) => apply(h, h.dataset.k));
   for (const [key, a] of Object.entries(ch)) {
-    if (!a.note || !lastEl[key]) continue;
+    if (!a.note) continue;
+    const range = [key, ...(a.with || [])];
+    const endKey = range.filter((k) => lastEl[k]).pop(); // marker goes after the last verse of the range
+    if (!endKey) continue;
     const mark = document.createElement("span");
     mark.className = "note-mark";
     mark.dataset.k = key;
     mark.textContent = "✎";
     mark.title = "Note";
-    lastEl[key].after(mark);
+    lastEl[endKey].after(mark);
   }
 }
 
@@ -411,7 +460,9 @@ $("noteBtn").addEventListener("click", () => {
   const rect = pendingSel.rect;
   hidePop();
   window.getSelection().removeAllRanges();
-  openNote(keys[keys.length - 1], rect, { edit: true, keys });
+  const existing = keys.map((k) => anchorOf(k)).find((a) => annotationFor(a).note);
+  if (existing) openNote(existing, rect, { edit: true });
+  else openNote(keys[0], rect, { edit: true, keys });
 });
 
 // Note card: hover shows it, click pins it (stays until closed), Edit/Delete inside.
@@ -428,8 +479,9 @@ function placeCard(rect) {
 function openNote(k, rect, { edit = false, pin = false, keys = null } = {}) {
   clearTimeout(noteState.hideTimer);
   k = String(k);
+  if (!keys) { keys = noteKeys(k); k = keys[0]; }
   const a = annotationFor(k);
-  noteState = { k, keys: (keys || [k]).map(String), pinned: pin || edit, hideTimer: null };
+  noteState = { k, keys: keys.map(String), pinned: pin || edit, hideTimer: null };
   $("noteRef").textContent = `Note · ${labelFor(noteState.keys, ref, chapter.title)}`;
   $("noteText").textContent = a.note || "";
   $("noteView").hidden = edit || !a.note;
@@ -500,7 +552,7 @@ function renderMarksList() {
   const items = [];
   for (const [r, ch] of Object.entries(all)) {
     if (!BOOKS[r.split(".")[0]]) continue;
-    for (const [k, a] of Object.entries(ch)) items.push({ r, k, a });
+    for (const [k, a] of Object.entries(ch)) if (a.note || a.color) items.push({ r, k, a: { ...a, range: [k, ...(a.with || [])] } });
   }
   items.sort((x, y) => (y.a.at || 0) - (x.a.at || 0));
   $("marksSection").hidden = !items.length;
@@ -511,7 +563,7 @@ function renderMarksList() {
     const preview = a.note ? a.note.replace(/\s+/g, " ").slice(0, 70) : (a.snip || "");
     return `<button class="mark-item" data-r="${esc(r)}" data-k="${esc(k)}">
       <span class="mark-icons">${icon}${pen}</span>
-      <span class="mark-body"><span class="mark-ref">${esc(labelFor([k], r))}</span><span class="mark-snip">${esc(preview)}</span></span>
+      <span class="mark-body"><span class="mark-ref">${esc(labelFor(a.note ? a.range : [k], r))}</span><span class="mark-snip">${esc(preview)}</span></span>
     </button>`;
   }).join("") + (items.length > 4 ? `<button class="marks-more" id="marksMore">${marksShowAll ? "show fewer" : `show all (${items.length})`}</button>` : "");
 }
@@ -919,11 +971,13 @@ function stripMd(t) {
 }
 // Append text to the note on those verses (keeps anything already written there).
 function saveToNote(target, text, question) {
-  const existing = annotationFor(target.verses[0], target.r).note || "";
+  const anchor = anchorOf(target.verses[0], target.r);
+  const existing = annotationFor(anchor, target.r).note || "";
   const header = question?.content && question.content !== "What is this?" ? `Q: ${question.content}\n` : "";
   const entry = header + text;
   const note = (existing ? existing + "\n\n— " : "") + entry;
-  setAnnotation(target.verses, { note: note.slice(0, 4000) }, target.r);
+  const keys = existing ? noteKeys(anchor, target.r) : target.verses;
+  setAnnotation(keys, { note: note.slice(0, 4000) }, target.r);
   toast(`Saved to your note on ${target.label}`);
 }
 function scrollChat() { chatLog.scrollTop = chatLog.scrollHeight; }
@@ -1303,6 +1357,7 @@ setInterval(tickClock, 1000);
   history.replaceState(null, "", "#" + ref);
   messages = store.get("messages", []).filter((m) => m.role !== "assistant" || m.content);
   renderLog();
+  mergeDuplicateNotes();
   renderMarksList();
   await loadChapter();
   if (firstVisit && ref === START_REF) scrollToSectionOf(START_VERSE);
