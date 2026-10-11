@@ -566,3 +566,13 @@ svg { display: block; }
 }
 [data-tip-align="right"]::after { left: auto; right: 0; }
 [data-tip-text]:hover::after, [data-tip-text]:focus-visible::after { opacity: 1; transform: none; }
+
+/* Key hints in the selection toolbar */
+.sel-pop kbd {
+  margin-left: 6px; padding: 0 4px; border: 1px solid rgba(255,255,255,.35); border-radius: 2px;
+  font: 10px/14px var(--mono); color: rgba(255,255,255,.75); background: transparent;
+}
+.sel-pop .hl-dot kbd {
+  margin: 0; padding: 0; border: 0; display: grid; place-items: center; width: 100%; height: 100%;
+  font: bold 10px var(--mono); color: rgba(0,0,0,.55);
+}

@@ -227,24 +227,24 @@
   <!-- Floating toolbar that appears over a text selection -->
   <div class="sel-pop" id="selPop" hidden>
     <div class="sel-group" id="markGroup">
-      <button class="hl-dot" data-color="honey" title="Highlight: honey" aria-label="Highlight honey"></button>
-      <button class="hl-dot" data-color="sage" title="Highlight: sage" aria-label="Highlight sage"></button>
-      <button class="hl-dot" data-color="sky" title="Highlight: sky" aria-label="Highlight sky"></button>
-      <button class="hl-dot" data-color="rose" title="Highlight: rose" aria-label="Highlight rose"></button>
-      <button class="hl-clear" id="hlClear" title="Remove highlight" aria-label="Remove highlight"><svg viewBox="0 0 24 24" width="13" height="13"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg></button>
+      <button class="hl-dot" data-color="honey" data-key="1" title="Highlight: honey (1)" aria-label="Highlight honey"><kbd>1</kbd></button>
+      <button class="hl-dot" data-color="sage" data-key="2" title="Highlight: sage (2)" aria-label="Highlight sage"><kbd>2</kbd></button>
+      <button class="hl-dot" data-color="sky" data-key="3" title="Highlight: sky (3)" aria-label="Highlight sky"><kbd>3</kbd></button>
+      <button class="hl-dot" data-color="rose" data-key="4" title="Highlight: rose (4)" aria-label="Highlight rose"><kbd>4</kbd></button>
+      <button class="hl-clear" id="hlClear" data-key="0" title="Remove highlight (0)" aria-label="Remove highlight"><svg viewBox="0 0 24 24" width="13" height="13"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg></button>
       <span class="sel-divider"></span>
-      <button id="noteBtn"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>Note</button>
+      <button id="noteBtn" data-key="n"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>Note<kbd>N</kbd></button>
     </div>
     <div class="sel-group" id="saveGroup" hidden>
-      <button id="saveSelBtn"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>Save to note</button>
+      <button id="saveSelBtn" data-key="n"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>Save to note<kbd>N</kbd></button>
     </div>
     <span class="sel-divider" id="aiDivider"></span>
     <div class="sel-group" id="aiGroup">
-    <button id="whatBtn"><svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5v.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Please explain this</button>
+    <button id="whatBtn" data-key="e"><svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5v.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Please explain this<kbd>E</kbd></button>
     <span class="sel-divider"></span>
-    <button id="simpleBtn"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.3zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9z"/></svg>Say it simply</button>
+    <button id="simpleBtn" data-key="s"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.3zM18 15l.9 2.1L21 18l-2.1.9L18 21l-.9-2.1L15 18l2.1-.9z"/></svg>Say it simply<kbd>S</kbd></button>
     <span class="sel-divider"></span>
-    <button id="askBtn"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 5h16v11H9l-5 4z"/></svg>Ask…</button>
+    <button id="askBtn" data-key="a"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 5h16v11H9l-5 4z"/></svg>Ask…<kbd>A</kbd></button>
     </div>
   </div>
 

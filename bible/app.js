@@ -1168,6 +1168,13 @@ function animateArrowScroll(sc) {
 }
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") { hidePop(); toggleSizePop(false); closeNote(); }
+  // Toolbar shortcuts: while text is selected and the toolbar is showing, single keys press its buttons
+  // (1–4 highlight colors, 0 remove, N note, E explain, S say it simply, A ask).
+  if (!selPop.hidden && !e.metaKey && !e.ctrlKey && !e.altKey && !e.target.closest?.("input, textarea")) {
+    const k = e.key.toLowerCase();
+    const btn = [...selPop.querySelectorAll("[data-key]")].find((b) => b.dataset.key === k && b.offsetParent !== null && !b.closest("[hidden]"));
+    if (btn) { e.preventDefault(); btn.click(); return; }
+  }
   const mod = IS_MAC ? e.metaKey : e.ctrlKey;
   if (mod && !e.shiftKey && !e.altKey && (e.key === "b" || e.key === "B")) { e.preventDefault(); toggleSidebar(); return; }
   if (mod && !e.shiftKey && !e.altKey && (e.key === "i" || e.key === "I")) { e.preventDefault(); toggleChat(); return; }
