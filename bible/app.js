@@ -831,27 +831,73 @@ document.addEventListener("visibilitychange", () => {
 window.addEventListener("pagehide", reportLeave);
 
 // ---------- Name gate ----------
-function askForName() {
+// First screen: new reader (name + optional email) or returning reader (email sign-in link).
+// Resolves with the reader's first name once they're through to the welcome step.
+function showGate({ needNameOnly = false } = {}) {
   return new Promise((resolve) => {
+    const panes = ["gateChoose", "gateForm", "gateSignIn", "gateSent", "gateWelcome"];
+    const show = (id) => panes.forEach((p) => ($(p).hidden = p !== id));
     $("gate").hidden = false;
     app.hidden = true;
-    $("gateName").focus();
-    $("gateForm").addEventListener("submit", (e) => {
-      e.preventDefault();
-      const name = $("gateName").value.trim().slice(0, 40);
-      if (!name) return;
+
+    const welcome = (name) => {
       store.set("bible_name", name);
-      // Step 2: tell them up front that the AI helper needs a password.
-      $("gateForm").hidden = true;
       $("gateHello").textContent = `Welcome, ${name}.`;
-      $("gateWelcome").hidden = false;
+      show("gateWelcome");
       $("gateStart").focus();
       $("gateStart").addEventListener("click", () => {
         $("gate").hidden = true;
         app.hidden = false;
         resolve(name);
       }, { once: true });
-    });
+    };
+    const sendLink = async (email, name) => {
+      const { error } = await sb.auth.signInWithOtp({
+        email,
+        options: { emailRedirectTo: location.origin + location.pathname, data: name ? { name } : undefined },
+      });
+      $("gateErr").textContent = error ? `Couldn't send the link: ${error.message}` : "";
+      return !error;
+    };
+
+    if (needNameOnly) {
+      // Signed in, but no name on the account yet: just ask for the name.
+      $("gateEmail").hidden = true;
+      $("gateFormNote").textContent = "Your first name is saved to your account and shared with sdp.";
+      $("gateForm").querySelector("[data-gate-back]").hidden = true;
+      show("gateForm");
+    } else {
+      show("gateChoose");
+    }
+
+    $("gateNewBtn").onclick = () => { show("gateForm"); $("gateName").focus(); };
+    $("gateHaveBtn").onclick = () => { show("gateSignIn"); $("gateSignInEmail").focus(); };
+    $("gate").querySelectorAll("[data-gate-back]").forEach((b) => (b.onclick = () => show("gateChoose")));
+
+    $("gateForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const name = $("gateName").value.trim().slice(0, 40);
+      const email = needNameOnly ? "" : $("gateEmail").value.trim();
+      if (!name) return;
+      if (!email) return welcome(name);
+      store.set("bible_name", name);
+      $("gateSentText").textContent = `We sent a link to ${email}. Tap it on this device to finish creating your account. Your name is saved with it.`;
+      $("gateGuestBtn").textContent = "Keep reading as a guest for now";
+      $("gateGuestBtn").onclick = () => welcome(name);
+      show("gateSent");
+      await sendLink(email, name);
+    };
+
+    $("gateSignIn").onsubmit = async (e) => {
+      e.preventDefault();
+      const email = $("gateSignInEmail").value.trim();
+      if (!email) return;
+      $("gateSentText").textContent = `We sent a sign-in link to ${email}. Tap it on this device and you'll come back signed in, with your chats and reading place.`;
+      $("gateGuestBtn").textContent = "Read as a guest instead";
+      $("gateGuestBtn").onclick = () => { show("gateForm"); $("gateName").focus(); };
+      show("gateSent");
+      await sendLink(email, null);
+    };
   });
 }
 
@@ -875,9 +921,10 @@ setInterval(tickClock, 1000);
   track("visit");
   // Signed-in readers bring their name (and chats) from their account, so only ask if it's still unknown.
   if (await pullSync()) textSize = clampSize(store.get("textSize", DEFAULT_SIZE));
-  let name = store.get("bible_name", "");
+  let name = store.get("bible_name", "") || String(user?.user_metadata?.name || "").slice(0, 40);
+  if (name && !store.get("bible_name", "")) store.set("bible_name", name); // name given when the account was created
   if (!name && !IS_LOCAL) {
-    name = await askForName();
+    name = await showGate({ needNameOnly: !!user });
     track("onboard_done", name);
   } else if (name) {
     track("identify", name); // also links a signed-in reader's email to their name in /stats

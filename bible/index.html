@@ -24,11 +24,36 @@
       <img class="gate-icon" src="icon.png" alt="" width="56" height="56" />
       <h1>The Holy Bible</h1>
       <p class="gate-sub">Understanding the Word more easily, with the help of AI.</p>
-      <form id="gateForm">
+      <!-- Step 1: new or returning? -->
+      <div class="gate-choose" id="gateChoose">
+        <button type="button" class="gate-btn" id="gateNewBtn">I'm new here</button>
+        <button type="button" class="gate-btn secondary" id="gateHaveBtn">I have an account</button>
+      </div>
+
+      <!-- New reader: name, optional email -->
+      <form id="gateForm" hidden>
         <input id="gateName" placeholder="Your first name" autocomplete="given-name" maxlength="40" required />
-        <p class="gate-note">Your first name is shared with sdp, so sdp can see who's reading.</p>
+        <input id="gateEmail" type="email" placeholder="Email (optional)" autocomplete="email" />
+        <p class="gate-note" id="gateFormNote">Add your email to save your chats and reading place to an account that follows you to any device. Leave it blank to read as a guest (saved on this device only). Your name and email are shared with sdp.</p>
         <button type="submit" class="gate-btn">Continue</button>
+        <button type="button" class="gate-link" data-gate-back>back</button>
       </form>
+
+      <!-- Returning reader: email sign-in link -->
+      <form id="gateSignIn" hidden>
+        <input id="gateSignInEmail" type="email" placeholder="you@email.com" autocomplete="email" required />
+        <p class="gate-note">We'll email you a sign-in link. Open it on this device and you'll come right back here, signed in.</p>
+        <button type="submit" class="gate-btn">Send sign-in link</button>
+        <button type="button" class="gate-link" data-gate-back>back</button>
+      </form>
+
+      <!-- Link sent -->
+      <div class="gate-sent" id="gateSent" hidden>
+        <h2>Check your email</h2>
+        <p id="gateSentText">We sent a sign-in link. Tap it on this device to finish.</p>
+        <button type="button" class="gate-btn" id="gateGuestBtn">Keep reading as a guest for now</button>
+        <p class="gate-note gate-err" id="gateErr"></p>
+      </div>
       <div class="gate-welcome" id="gateWelcome" hidden>
         <h2 id="gateHello">Welcome.</h2>
         <ul class="gate-points">

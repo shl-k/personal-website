@@ -405,3 +405,16 @@ svg { display: block; }
 .app.no-ai .chat-toggle, .app.no-ai .chat-pane { display: none; }
 .gate-points li strong { color: #000; font-weight: bold; }
 .account-hint { margin: 8px 0 0; font-size: 11px; line-height: 1.5; color: #2f2f2f; }
+
+/* Gate: choose new/returning, link-sent step */
+.gate-choose { display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.gate-choose .gate-btn { width: 240px; }
+.gate-btn.secondary { background: var(--paper); color: var(--ink); border-color: var(--line); }
+.gate-btn.secondary:hover { background: #fff; }
+.gate form input + input { margin-top: 8px; }
+.gate-link { margin-top: 12px; border: 0; background: none; padding: 0; color: #333; font: 12px var(--mono); text-decoration: underline; }
+.gate-sent { max-width: 420px; display: flex; flex-direction: column; align-items: center; }
+.gate-sent h2 { font: 400 22px var(--mono); margin: 0 0 10px; color: var(--ink); }
+.gate-sent p { font: 13px/1.6 var(--mono); color: var(--ink); margin: 0 0 22px; }
+.gate-err { color: #8a1f1f !important; margin-top: 12px !important; }
+.gate-err:empty { display: none; }
