@@ -149,3 +149,6 @@ create policy "users update own bible state" on public.bible_state
   for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
 
 alter table public.bible_events add column if not exists email text check (char_length(email) <= 120);
+
+-- Migration (Oct 2026): also log prompt-cache writes so per-question cost is exact.
+alter table public.ai_usage add column if not exists cache_write_tokens integer;

@@ -151,6 +151,7 @@ Deno.serve(async (req) => {
             input_tokens: final.usage.input_tokens,
             output_tokens: final.usage.output_tokens,
             cache_read_tokens: final.usage.cache_read_input_tokens ?? 0,
+            cache_write_tokens: final.usage.cache_creation_input_tokens ?? 0,
           }).eq("id", usageRow.id);
         }
       } catch (err) {
