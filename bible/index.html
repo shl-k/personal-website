@@ -140,6 +140,15 @@
             <p>You can keep asking follow-up questions below.</p>
           </div>
         </div>
+        <form class="pw-form" id="pwForm" hidden>
+          <div class="pw-title">This chat needs a password</div>
+          <p>Ask sdp for the password to use the AI study helper.</p>
+          <div class="pw-row">
+            <input type="password" id="pwInput" placeholder="password" autocomplete="off" />
+            <button type="submit">Unlock</button>
+          </div>
+          <div class="pw-foot"><span class="pw-note" id="pwNote"></span><button type="button" class="pw-cancel" id="pwCancel">cancel</button></div>
+        </form>
         <form class="composer" id="composer">
           <div class="composer-quote" id="composerQuote" hidden>
             <span class="q-text" id="composerQuoteText"></span>

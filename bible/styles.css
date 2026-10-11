@@ -326,6 +326,17 @@ svg { display: block; }
 .send-btn { width: 30px; height: 30px; border-radius: 2px; border: 0; flex-shrink: 0; background: var(--ink); color: var(--paper); display: grid; place-items: center; }
 .send-btn:disabled { background: #9a9a9a; cursor: default; }
 
+.pw-form { padding: 14px; border-top: 1px solid var(--line); background: var(--paper-2); min-width: var(--chat-width); }
+.pw-title { font: bold 13px var(--mono); margin-bottom: 4px; }
+.pw-form p { margin: 0 0 10px; font-size: 12px; color: var(--muted); }
+.pw-row { display: flex; gap: 6px; }
+.pw-row input { flex: 1; min-width: 0; height: 32px; padding: 0 10px; border: 1px solid var(--line); border-radius: 2px; background: #fff; font: 13px var(--mono); outline: none; }
+.pw-row input:focus { border-color: var(--ink); }
+.pw-row button { height: 32px; padding: 0 12px; border: 1px solid var(--accent); border-radius: 2px; background: var(--accent); color: var(--paper); font: 12.5px var(--mono); }
+.pw-foot { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; min-height: 16px; }
+.pw-note { font-size: 11.5px; color: #8a1f1f; }
+.pw-cancel { border: 0; background: none; padding: 0; color: var(--muted); font: 11.5px var(--mono); text-decoration: underline; }
+
 /* ---------- Selection toolbar + toast ---------- */
 .sel-pop {
   position: fixed; z-index: 50; display: flex; align-items: center; transform: translate(-50%, -100%);
@@ -370,7 +381,7 @@ svg { display: block; }
     transition: height .25s ease;
   }
   .app.chat-open .chat-pane { height: 62vh; }
-  .chat-head, .chat-log, .composer { min-width: 0; }
+  .chat-head, .chat-log, .composer, .pw-form { min-width: 0; }
 }
 
 /* Reading-only mode (no AI companion reachable) */

@@ -133,7 +133,7 @@ async function detectAi() {
   const params = new URLSearchParams(location.search);
   if (params.has("me")) store.set("localAI", true);
   if (params.has("notme")) store.set("localAI", false);
-  if (!IS_LOCAL && !store.get("localAI", false)) return false;
+  if (!IS_LOCAL) return !!SBC; // hosted: the `ask` function (owner sign-in or chat password)
   try {
     const ctrl = new AbortController();
     setTimeout(() => ctrl.abort(), 1500);
@@ -142,6 +142,21 @@ async function detectAi() {
   } catch {
     return false;
   }
+}
+
+// New visitors open at Luke 9, "The Cost of Discipleship" (verse 57 in the BSB).
+const START_REF = "LUK.9";
+const START_VERSE = 57;
+function scrollToSectionOf(v) {
+  const content = chapterEl.querySelector(`.content[data-v="${v}"]`);
+  if (!content) return;
+  const block = content.closest(".p, .m, .q1, .q2, .pi, .nb") || content;
+  const head = block.previousElementSibling;
+  const target = head && head.matches(".s1, .s, .s2, .yv-h, .heading") ? head : block;
+  const scroller = $("readerScroll");
+  scroller.style.scrollBehavior = "auto";
+  scroller.scrollTop += target.getBoundingClientRect().top - scroller.getBoundingClientRect().top - 20;
+  scroller.style.scrollBehavior = "";
 }
 
 // Previous / next chapter, crossing into neighboring books.
@@ -436,16 +451,28 @@ async function send(userMsg) {
 
   const aiEl = chatLog.lastElementChild;
   try {
-    const res = await fetch(`${AI_BASE}/api/ask`, {
+    const res = await fetch(await askUrl(), {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...(await askHeaders()) },
       body: JSON.stringify({
         title: chapter.title,
         versionName: chapter.versionName,
         context: chapterPlainText(),
+        visitorId: visitorId(),
         messages: messages.slice(0, -1).map(({ role, content, quote, ref }) => ({ role, content, quote, ref })),
       }),
     });
+    if (res.status === 401 && !IS_LOCAL) {
+      // Needs the chat password: take the question back and ask for it.
+      messages.splice(-2, 2);
+      renderLog();
+      markDiscussed();
+      busy = false;
+      $("sendBtn").disabled = false;
+      showPasswordForm(userMsg, !!store.get("chat_pw", ""));
+      return;
+    }
+    if (res.status === 429) throw new Error("limit");
     if (!res.ok) throw new Error(await res.text());
     const reader = res.body.getReader();
     const dec = new TextDecoder();
@@ -457,7 +484,11 @@ async function send(userMsg) {
       scrollChat();
     }
   } catch (err) {
-    reply.content += `\n\n⚠️ Couldn't reach the Bible companion on this Mac (${err.message}). Double-click Start Bible.command, then ask again.`;
+    reply.content += err.message === "limit"
+      ? "You've reached today's limit for questions. Please come back tomorrow. 🙏"
+      : IS_LOCAL
+      ? `\n\n⚠️ Couldn't reach the Bible companion on this Mac (${err.message}). Double-click Start Bible.command, then ask again.`
+      : `\n\n⚠️ Couldn't reach the AI (${err.message}). Please try again.`;
   }
   if (!reply.content.trim()) reply.content = "⚠️ No reply came back. Try asking again.";
   aiEl.innerHTML = md(reply.content);
@@ -466,6 +497,45 @@ async function send(userMsg) {
   store.set("messages", messages);
   scrollChat();
 }
+
+// Where questions go: the local companion on the owner's Mac, or the hosted `ask` function.
+async function askUrl() {
+  return IS_LOCAL ? "/api/ask" : `${SBC.url}/functions/v1/ask`;
+}
+async function askHeaders() {
+  if (IS_LOCAL) return {};
+  const h = { apikey: SBC.anonKey };
+  const { data } = await sb.auth.getSession(); // refreshes the owner's token if needed
+  if (data?.session?.access_token && user) h["x-user-token"] = data.session.access_token;
+  const pw = store.get("chat_pw", "");
+  if (pw) h["x-chat-password"] = pw;
+  return h;
+}
+
+// Chat password prompt (guests). The password is checked by the server, never stored in the page code.
+let retryAfterPassword = null;
+function showPasswordForm(userMsg, wasWrong) {
+  retryAfterPassword = userMsg;
+  $("pwNote").textContent = wasWrong ? "That password didn't work. Try again." : "";
+  $("pwForm").hidden = false;
+  $("composer").hidden = true;
+  $("pwInput").value = "";
+  $("pwInput").focus();
+}
+$("pwForm").addEventListener("submit", (e) => {
+  e.preventDefault();
+  const pw = $("pwInput").value.trim();
+  if (!pw) return;
+  store.set("chat_pw", pw);
+  $("pwForm").hidden = true;
+  $("composer").hidden = false;
+  if (retryAfterPassword) { const m = retryAfterPassword; retryAfterPassword = null; send(m); }
+});
+$("pwCancel").addEventListener("click", () => {
+  retryAfterPassword = null;
+  $("pwForm").hidden = true;
+  $("composer").hidden = false;
+});
 
 function renderLog() {
   $("chatEmpty").hidden = messages.length > 0;
@@ -793,12 +863,14 @@ setInterval(tickClock, 1000);
   renderAccount(); // ?me (handled in detectAi) marks this as the owner's device
   const saved = store.get("version", null);
   version = versions.includes(saved) ? saved : versions[0];
-  ref = (hadHash && readHash()) || store.get("ref", "LUK.3");
+  const firstVisit = !hadHash && store.get("ref", null) == null;
+  ref = (hadHash && readHash()) || store.get("ref", START_REF);
   { const [c, n] = ref.split("."); if (!BOOKS[c] || Number(n) < 1 || Number(n) > BOOKS[c].chapters) ref = "LUK.3"; }
   history.replaceState(null, "", "#" + ref);
   messages = store.get("messages", []).filter((m) => m.role !== "assistant" || m.content);
   renderLog();
   await loadChapter();
+  if (firstVisit && ref === START_REF) scrollToSectionOf(START_VERSE);
   if (aiOn && store.get("chatOpen", false) && messages.length) openChat();
   if (user) toast("Synced");
 })();

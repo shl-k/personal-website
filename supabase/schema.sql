@@ -111,3 +111,20 @@ create policy "owner reads bible events" on public.bible_events
 revoke all on public.bible_events from anon, authenticated;
 grant insert on public.bible_events to anon, authenticated;
 grant select on public.bible_events to authenticated;
+
+-- ---------------------------------------------------------------------------
+-- AI chat usage (written only by the `ask` Edge Function with the service role;
+-- used for daily limits and cost tracking). No policies = no public access.
+-- ---------------------------------------------------------------------------
+create table if not exists public.ai_usage (
+  id            bigint generated always as identity primary key,
+  created_at    timestamptz not null default now(),
+  visitor_id    text not null check (char_length(visitor_id) <= 64),
+  who           text not null check (who in ('owner', 'guest')),
+  input_tokens  integer,
+  output_tokens integer,
+  cache_read_tokens integer
+);
+create index if not exists ai_usage_created_at_idx on public.ai_usage (created_at);
+alter table public.ai_usage enable row level security;
+revoke all on public.ai_usage from anon, authenticated;
