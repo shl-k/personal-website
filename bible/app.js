@@ -213,6 +213,7 @@ async function loadChapter(verse) {
     chapter.html;
   fixSpacing(chapterEl);
   tagVerses();
+  tagHeadings();
   renderAnnotations();
   track("chapter_open", ref);
   $("copyright").textContent = chapter.copyright;
@@ -300,53 +301,100 @@ function fixSpacing(root) {
 }
 
 // ---------- Highlights & notes ----------
-// Stored per verse: annotations["JHN.3"]["16"] = { color: "honey" | "sage" | "sky" | "rose", note: "…" }.
-// Saved in this browser; synced with the reader's account when signed in.
+// Stored per chapter and key: annotations["JHN.3"]["16"] for verse 16, ["h1"] for the heading
+// that starts at verse 1. Each is { color?, note?, snip, at }: snip = a short text preview for
+// the sidebar list, at = last change. Saved in this browser; synced with the account when signed in.
 const HL_COLORS = ["honey", "sage", "sky", "rose"];
-function annotationFor(v, r = ref) { return (store.get("annotations", {})[r] || {})[v] || {}; }
-function setAnnotation(verses, patch, r = ref) {
+const HEADING_SEL = ".s1, .s, .s2, .yv-h, .heading, .ms";
+const isHeadingKey = (k) => String(k).startsWith("h");
+function annotationFor(k, r = ref) { return (store.get("annotations", {})[r] || {})[k] || {}; }
+
+// Give each section heading a stable key ("h" + the first verse after it) and wrap its text,
+// so it can be highlighted and noted like a verse.
+function tagHeadings() {
+  chapterEl.querySelectorAll(HEADING_SEL).forEach((h, i) => {
+    if (h.closest(".note")) return;
+    let next = h.nextElementSibling, v = null;
+    while (next && !v) { v = next.querySelector?.(".content")?.dataset.v; next = next.nextElementSibling; }
+    const span = document.createElement("span");
+    span.className = "hk-text";
+    span.dataset.k = v ? `h${v}` : `hend${i}`;
+    while (h.firstChild) span.appendChild(h.firstChild);
+    h.appendChild(span);
+  });
+}
+
+function snippetFor(k) {
+  if (isHeadingKey(k)) return chapterEl.querySelector(`.hk-text[data-k="${k}"]`)?.textContent.trim().slice(0, 90) || "";
+  return [...chapterEl.querySelectorAll(`.content[data-v="${k}"]`)].map((c) => c.textContent).join("").replace(/\s+/g, " ").trim().slice(0, 90);
+}
+function setAnnotation(keys, patch, r = ref) {
   const all = store.get("annotations", {});
   const ch = all[r] || {};
-  for (const v of verses) {
-    const next = { ...(ch[v] || {}), ...patch };
+  for (const key of keys.map(String)) {
+    const next = { ...(ch[key] || {}), ...patch };
     if (!next.color) delete next.color;
     if (!next.note) delete next.note;
-    if (Object.keys(next).length) ch[v] = next; else delete ch[v];
+    if (next.color || next.note) {
+      if (r === ref) next.snip = snippetFor(key) || next.snip || "";
+      next.at = Date.now();
+      ch[key] = next;
+    } else delete ch[key];
   }
   if (Object.keys(ch).length) all[r] = ch; else delete all[r];
   store.set("annotations", all);
   if (r === ref) renderAnnotations();
+  renderMarksList();
 }
 function renderAnnotations() {
   chapterEl.querySelectorAll(".note-mark").forEach((m) => m.remove());
   const ch = store.get("annotations", {})[ref] || {};
-  const lastOfVerse = {};
-  chapterEl.querySelectorAll(".content").forEach((c) => {
-    const a = ch[c.dataset.v] || {};
-    if (a.color && HL_COLORS.includes(a.color)) c.dataset.hl = a.color; else delete c.dataset.hl;
-    c.classList.toggle("has-note", !!a.note);
-    lastOfVerse[c.dataset.v] = c;
-  });
-  for (const [v, a] of Object.entries(ch)) {
-    if (!a.note || !lastOfVerse[v]) continue;
+  const lastEl = {};
+  const apply = (el, key) => {
+    const a = ch[key] || {};
+    if (a.color && HL_COLORS.includes(a.color)) el.dataset.hl = a.color; else delete el.dataset.hl;
+    el.classList.toggle("has-note", !!a.note);
+    lastEl[key] = el;
+  };
+  chapterEl.querySelectorAll(".content").forEach((c) => apply(c, c.dataset.v));
+  chapterEl.querySelectorAll(".hk-text").forEach((h) => apply(h, h.dataset.k));
+  for (const [key, a] of Object.entries(ch)) {
+    if (!a.note || !lastEl[key]) continue;
     const mark = document.createElement("span");
     mark.className = "note-mark";
-    mark.dataset.v = v;
+    mark.dataset.k = key;
     mark.textContent = "✎";
     mark.title = "Note";
-    lastOfVerse[v].after(mark);
+    lastEl[key].after(mark);
   }
 }
 
+// Human label for a set of keys in a chapter: "John 3:16–17" or "John 3 · “Jesus and Nicodemus”"
+function labelFor(keys, r = ref, title = null) {
+  const [code, n] = r.split(".");
+  const chTitle = title || `${code === "PSA" ? "Psalm" : BOOKS[code]?.name || code} ${n}`;
+  const verses = keys.filter((k) => !isHeadingKey(k)).map(Number).sort((a, b) => a - b);
+  const head = keys.find(isHeadingKey);
+  if (!verses.length && head) {
+    const text = annotationFor(head, r).snip || (r === ref ? snippetFor(head) : "");
+    return `${chTitle} · “${text || "heading"}”`;
+  }
+  const a = verses[0], b = verses[verses.length - 1];
+  return `${chTitle}:${a}${b !== a ? "–" + b : ""}`;
+}
+
+const selKeys = (s) => [...(s?.headingKeys || []), ...(s?.verses || []).map(String)];
 selPop.querySelectorAll(".hl-dot").forEach((d) => d.addEventListener("click", () => {
-  if (!pendingSel?.verses.length) return;
-  setAnnotation(pendingSel.verses, { color: d.dataset.color });
+  const keys = selKeys(pendingSel);
+  if (!keys.length) return;
+  setAnnotation(keys, { color: d.dataset.color });
   hidePop();
   window.getSelection().removeAllRanges();
 }));
 $("hlClear").addEventListener("click", () => {
-  if (!pendingSel?.verses.length) return;
-  setAnnotation(pendingSel.verses, { color: null });
+  const keys = selKeys(pendingSel);
+  if (!keys.length) return;
+  setAnnotation(keys, { color: null });
   hidePop();
   window.getSelection().removeAllRanges();
 });
@@ -358,16 +406,16 @@ $("saveSelBtn").addEventListener("click", () => {
   saveToNote(s.noteTarget, s.text, null);
 });
 $("noteBtn").addEventListener("click", () => {
-  if (!pendingSel?.verses.length) return;
-  const verses = pendingSel.verses;
+  const keys = selKeys(pendingSel);
+  if (!keys.length) return;
   const rect = pendingSel.rect;
   hidePop();
   window.getSelection().removeAllRanges();
-  openNote(verses[verses.length - 1], rect, { edit: true, verses });
+  openNote(keys[keys.length - 1], rect, { edit: true, keys });
 });
 
 // Note card: hover shows it, click pins it (stays until closed), Edit/Delete inside.
-let noteState = { v: null, verses: [], pinned: false, hideTimer: null };
+let noteState = { k: null, keys: [], pinned: false, hideTimer: null };
 function placeCard(rect) {
   const card = $("noteCard");
   const w = card.offsetWidth, h = card.offsetHeight;
@@ -377,12 +425,12 @@ function placeCard(rect) {
   card.style.left = left + "px";
   card.style.top = top + "px";
 }
-function openNote(v, rect, { edit = false, pin = false, verses = null } = {}) {
+function openNote(k, rect, { edit = false, pin = false, keys = null } = {}) {
   clearTimeout(noteState.hideTimer);
-  const a = annotationFor(v);
-  noteState = { v, verses: verses || [v], pinned: pin || edit, hideTimer: null };
-  const first = noteState.verses[0], last = noteState.verses[noteState.verses.length - 1];
-  $("noteRef").textContent = `Note · ${chapter.title}:${first}${last !== first ? "–" + last : ""}`;
+  k = String(k);
+  const a = annotationFor(k);
+  noteState = { k, keys: (keys || [k]).map(String), pinned: pin || edit, hideTimer: null };
+  $("noteRef").textContent = `Note · ${labelFor(noteState.keys, ref, chapter.title)}`;
   $("noteText").textContent = a.note || "";
   $("noteView").hidden = edit || !a.note;
   $("noteForm").hidden = !(edit || !a.note);
@@ -390,19 +438,20 @@ function openNote(v, rect, { edit = false, pin = false, verses = null } = {}) {
   $("noteCard").classList.toggle("pinned", noteState.pinned);
   $("noteCard").hidden = false;
   placeCard(rect);
-  chapterEl.querySelectorAll(".note-mark").forEach((m) => m.classList.toggle("active", m.dataset.v === String(v) && noteState.pinned));
+  chapterEl.querySelectorAll(".note-mark").forEach((m) => m.classList.toggle("active", m.dataset.k === k && noteState.pinned));
   if (edit) $("noteInput").focus();
 }
 function closeNote() {
   $("noteCard").hidden = true;
-  noteState = { v: null, verses: [], pinned: false, hideTimer: null };
+  noteState = { k: null, keys: [], pinned: false, hideTimer: null };
   chapterEl.querySelectorAll(".note-mark.active").forEach((m) => m.classList.remove("active"));
 }
-const noteTarget = (el) => el.closest(".note-mark") || el.closest(".content.has-note");
+const noteTarget = (el) => el.closest(".note-mark") || el.closest(".content.has-note, .hk-text.has-note");
+const keyOf = (t) => t.dataset.k || t.dataset.v;
 chapterEl.addEventListener("mouseover", (e) => {
   const t = noteTarget(e.target);
   if (!t || noteState.pinned) return;
-  openNote(Number(t.dataset.v), t.getBoundingClientRect());
+  openNote(keyOf(t), t.getBoundingClientRect());
 });
 chapterEl.addEventListener("mouseout", (e) => {
   const t = noteTarget(e.target);
@@ -414,10 +463,10 @@ $("noteCard").addEventListener("mouseleave", () => { if (!noteState.pinned) clos
 chapterEl.addEventListener("click", (e) => {
   const t = noteTarget(e.target);
   if (!t || !window.getSelection().isCollapsed) return; // don't fight text selection
-  openNote(Number(t.dataset.v), t.getBoundingClientRect(), { pin: true });
+  openNote(keyOf(t), t.getBoundingClientRect(), { pin: true });
 });
 document.addEventListener("mousedown", (e) => {
-  if (!$("noteCard").hidden && noteState.pinned && !e.target.closest("#noteCard, .note-mark, .content.has-note")) closeNote();
+  if (!$("noteCard").hidden && noteState.pinned && !e.target.closest("#noteCard, .note-mark, .content.has-note, .hk-text.has-note")) closeNote();
 });
 $("noteClose").addEventListener("click", closeNote);
 $("noteEdit").addEventListener("click", () => {
@@ -428,21 +477,59 @@ $("noteEdit").addEventListener("click", () => {
   $("noteInput").focus();
 });
 $("noteDelete").addEventListener("click", () => {
-  setAnnotation(noteState.verses, { note: null });
+  setAnnotation(noteState.keys, { note: null });
   closeNote();
   toast("Note deleted");
 });
 $("noteCancel").addEventListener("click", () => {
-  if (annotationFor(noteState.v).note) { $("noteForm").hidden = true; $("noteView").hidden = false; } else closeNote();
+  if (annotationFor(noteState.k).note) { $("noteForm").hidden = true; $("noteView").hidden = false; } else closeNote();
 });
 $("noteForm").addEventListener("submit", (e) => {
   e.preventDefault();
   const text = $("noteInput").value.trim().slice(0, 4000);
-  setAnnotation(noteState.verses, { note: text || null });
+  setAnnotation(noteState.keys, { note: text || null });
   closeNote();
   if (text) toast("Note saved");
 });
 $("readerScroll").addEventListener("scroll", () => { if (!noteState.pinned) closeNote(); }, { passive: true });
+
+// ---------- Sidebar: My notes & highlights ----------
+let marksShowAll = false;
+function renderMarksList() {
+  const all = store.get("annotations", {});
+  const items = [];
+  for (const [r, ch] of Object.entries(all)) {
+    if (!BOOKS[r.split(".")[0]]) continue;
+    for (const [k, a] of Object.entries(ch)) items.push({ r, k, a });
+  }
+  items.sort((x, y) => (y.a.at || 0) - (x.a.at || 0));
+  $("marksSection").hidden = !items.length;
+  const shown = marksShowAll ? items : items.slice(0, 4);
+  $("marksList").innerHTML = shown.map(({ r, k, a }) => {
+    const icon = a.color ? `<span class="mark-swatch" data-hl="${esc(a.color)}"></span>` : "";
+    const pen = a.note ? `<span class="mark-pen">✎</span>` : "";
+    const preview = a.note ? a.note.replace(/\s+/g, " ").slice(0, 70) : (a.snip || "");
+    return `<button class="mark-item" data-r="${esc(r)}" data-k="${esc(k)}">
+      <span class="mark-icons">${icon}${pen}</span>
+      <span class="mark-body"><span class="mark-ref">${esc(labelFor([k], r))}</span><span class="mark-snip">${esc(preview)}</span></span>
+    </button>`;
+  }).join("") + (items.length > 4 ? `<button class="marks-more" id="marksMore">${marksShowAll ? "show fewer" : `show all (${items.length})`}</button>` : "");
+}
+$("marksList").addEventListener("click", (e) => {
+  if (e.target.closest("#marksMore")) { marksShowAll = !marksShowAll; return renderMarksList(); }
+  const b = e.target.closest(".mark-item");
+  if (!b) return;
+  const { r, k } = b.dataset;
+  const jump = () => {
+    const el = isHeadingKey(k) ? chapterEl.querySelector(`.hk-text[data-k="${k}"]`) : chapterEl.querySelector(`.content[data-v="${k}"]`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (!isHeadingKey(k)) goToVerse(Number(k));
+    if (annotationFor(k).note) setTimeout(() => openNote(k, el.getBoundingClientRect(), { pin: true }), 450);
+  };
+  if (r === ref) jump(); else { goTo(r); setTimeout(jump, 900); }
+  if (innerWidth <= 760) app.classList.remove("sidebar-open-mobile");
+});
 
 // Wrap every run of scripture text in <span class="content" data-v="N">, tracking
 // the current verse from the verse-number labels, so selections map to verses.
@@ -498,12 +585,15 @@ function readSelection() {
         .map((c) => Number(c.dataset.v))
     )].sort((a, b) => a - b);
   }
+  const headingKeys = inChapter
+    ? [...chapterEl.querySelectorAll(".hk-text")].filter((h) => range.intersectsNode(h)).map((h) => h.dataset.k)
+    : [];
   let noteTarget = null;
   if (inChat) {
     const ai = (range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement).closest(".msg-ai");
     if (ai) noteTarget = noteTargetFor(Number(ai.dataset.idx));
   }
-  return { text, verses, ref: refFor(verses), rect: range.getBoundingClientRect(), noteTarget };
+  return { text, verses, headingKeys, ref: refFor(verses), rect: range.getBoundingClientRect(), noteTarget };
 }
 
 function refFor(verses) {
@@ -515,16 +605,17 @@ function refFor(verses) {
 function showPop() {
   const s = readSelection();
   if (!s) return hidePop();
-  const canMark = s.verses.length > 0; // highlights/notes only on Bible text, not chat
+  const keys = selKeys(s);
+  const canMark = keys.length > 0; // highlights/notes only on Bible text (verses or headings), not chat
   $("saveGroup").hidden = !s.noteTarget;
   if (!aiOn && !canMark && !s.noteTarget) return hidePop();
   pendingSel = s;
   $("markGroup").hidden = !canMark;
   $("aiGroup").hidden = !aiOn;
   $("aiDivider").hidden = !(aiOn && (canMark || s.noteTarget));
-  const cur = canMark ? annotationFor(s.verses[0]).color : null;
+  const cur = canMark ? annotationFor(keys[0]).color : null;
   selPop.querySelectorAll(".hl-dot").forEach((d) => d.classList.toggle("current", d.dataset.color === cur));
-  $("hlClear").hidden = !s.verses.some((v) => annotationFor(v).color);
+  $("hlClear").hidden = !keys.some((k) => annotationFor(k).color);
   selPop.hidden = false;
   const w = selPop.offsetWidth;
   const x = Math.min(Math.max(s.rect.left + s.rect.width / 2, w / 2 + 8), innerWidth - w / 2 - 8);
@@ -1212,6 +1303,7 @@ setInterval(tickClock, 1000);
   history.replaceState(null, "", "#" + ref);
   messages = store.get("messages", []).filter((m) => m.role !== "assistant" || m.content);
   renderLog();
+  renderMarksList();
   await loadChapter();
   if (firstVisit && ref === START_REF) scrollToSectionOf(START_VERSE);
   if (aiOn && store.get("chatOpen", false) && messages.length) openChat();
