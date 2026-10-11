@@ -46,13 +46,45 @@ window.addEventListener("hashchange", () => {
   const r = readHash();
   if (r && r !== ref && BOOKS[r.split(".")[0]]) { ref = r; loadChapter(); }
 });
-function goTo(newRef, verse) {
+function goTo(newRef, verse, flash) {
   app.classList.remove("sidebar-open-mobile");
-  if (newRef === ref) { if (verse) goToVerse(verse); return; }
+  if (newRef === ref) { if (verse) goToVerse(verse, flash || [verse]); return; }
   ref = newRef;
   history.pushState(null, "", "#" + ref);
-  loadChapter(verse);
+  loadChapter(verse, flash);
 }
+
+// ---------- "Back to where I was" ----------
+// Jumping from the chat or the notes list remembers your reading spot; a button brings you back.
+let backSpot = null;
+function rememberSpot() {
+  if (!chapter) return;
+  const sc = $("readerScroll"), top = sc.getBoundingClientRect().top;
+  const first = [...chapterEl.querySelectorAll(".content")].find((c) => c.getBoundingClientRect().bottom > top + 12);
+  backSpot = { ref, scrollTop: sc.scrollTop, label: first ? `${chapter.title}:${first.dataset.v}` : chapter.title };
+  $("backLabel").textContent = backSpot.label;
+  $("backWrap").hidden = false;
+}
+function jumpTo(r, verses) {
+  rememberSpot();
+  goTo(r, verses[0], verses);
+}
+$("backBtn").addEventListener("click", async () => {
+  const spot = backSpot;
+  $("backWrap").hidden = true;
+  backSpot = null;
+  if (!spot) return;
+  if (spot.ref !== ref) {
+    ref = spot.ref;
+    history.pushState(null, "", "#" + ref);
+    await loadChapter();
+  }
+  const sc = $("readerScroll");
+  sc.style.scrollBehavior = "auto";
+  sc.scrollTop = spot.scrollTop;
+  sc.style.scrollBehavior = "";
+});
+$("backClose").addEventListener("click", () => { $("backWrap").hidden = true; backSpot = null; });
 
 // ---------- Where the text comes from ----------
 async function yv(pathname) {
@@ -187,7 +219,7 @@ function parseReference(text, currentBook) {
 }
 
 // ---------- Rendering the chapter ----------
-async function loadChapter(verse) {
+async function loadChapter(verse, flash) {
   hidePop();
   if (typeof closeNote === "function" && !$("noteCard").hidden) closeNote();
   chapterEl.innerHTML = '<p class="loading">Loading…</p>';
@@ -223,7 +255,7 @@ async function loadChapter(verse) {
   scroller.style.scrollBehavior = "auto";
   scroller.scrollTop = 0;
   scroller.style.scrollBehavior = "";
-  if (verse) setTimeout(() => goToVerse(verse), 50);
+  if (verse) setTimeout(() => goToVerse(verse, flash || [verse], false), 50); // new chapter: land on the verse instantly
 }
 
 // Sidebar: book card, chapter grid, recently read chapters.
@@ -572,6 +604,7 @@ $("marksList").addEventListener("click", (e) => {
   const b = e.target.closest(".mark-item");
   if (!b) return;
   const { r, k } = b.dataset;
+  rememberSpot();
   const jump = () => {
     const el = isHeadingKey(k) ? chapterEl.querySelector(`.hk-text[data-k="${k}"]`) : chapterEl.querySelector(`.content[data-v="${k}"]`);
     if (!el) return;
@@ -922,10 +955,7 @@ function renderLog() {
         q.className = "quote-card";
         q.innerHTML = `“${esc(m.quote)}”` + (m.ref ? `<span class="ref">${esc(m.ref)}</span>` : "");
         if (m.verses?.length && m.chapterRef) {
-          q.addEventListener("click", () => {
-            if (m.chapterRef === ref) goToVerse(m.verses[0], m.verses);
-            else goTo(m.chapterRef, m.verses[0]);
-          });
+          q.addEventListener("click", () => jumpTo(m.chapterRef, m.verses));
         }
         el.appendChild(q);
       }
@@ -988,10 +1018,13 @@ function markDiscussed() {
   chapterEl.querySelectorAll(".content").forEach((c) => c.classList.toggle("discussed", set.has(Number(c.dataset.v))));
 }
 
-function goToVerse(n, flash = [n]) {
+function goToVerse(n, flash = [n], smooth = true) {
   const el = chapterEl.querySelector(`.content[data-v="${n}"]`);
   if (!el) return;
-  el.scrollIntoView({ behavior: "smooth", block: "center" });
+  const sc = $("readerScroll");
+  if (!smooth) sc.style.scrollBehavior = "auto";
+  el.scrollIntoView({ behavior: smooth ? "smooth" : "auto", block: "center" });
+  if (!smooth) sc.style.scrollBehavior = "";
   for (const v of flash) {
     chapterEl.querySelectorAll(`.content[data-v="${v}"]`).forEach((f) => {
       f.classList.remove("flash"); void f.offsetWidth; f.classList.add("flash");
@@ -1000,7 +1033,7 @@ function goToVerse(n, flash = [n]) {
 }
 chatLog.addEventListener("click", (e) => {
   const x = e.target.closest(".xref");
-  if (x) goTo(x.dataset.ref, Number(x.dataset.v));
+  if (x) jumpTo(x.dataset.ref, [Number(x.dataset.v)]);
 });
 
 // ---------- Minimal, safe markdown ----------
