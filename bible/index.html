@@ -166,7 +166,10 @@
             <div class="chat-sub">Select any word or verse on the left</div>
           </div>
           <div class="chat-head-actions">
-            <button class="icon-btn" id="newChatBtn" title="Clear conversation" aria-label="Clear conversation">
+            <button class="icon-btn" id="historyBtn" title="Past chats" aria-label="Past chats" aria-pressed="false">
+              <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 12a9 9 0 1 0 3-6.7M3 4v4h4M12 7v5l3 2"/></svg>
+            </button>
+            <button class="icon-btn" id="newChatBtn" title="New chat (this one is saved to history)" aria-label="New chat">
               <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>
             </button>
             <button class="icon-btn" id="closeChatBtn" title="Close" aria-label="Close chat">
@@ -179,6 +182,10 @@
             <p><strong>Highlight anything</strong> (a name, a place, a phrase, or a whole passage), then tap <em>What is this?</em></p>
             <p>You can keep asking follow-up questions below.</p>
           </div>
+        </div>
+        <div class="chat-history" id="chatHistory" hidden>
+          <div class="history-head">Past chats</div>
+          <div class="history-list" id="historyList"></div>
         </div>
         <form class="pw-form" id="pwForm" hidden>
           <div class="pw-title">This chat needs a password</div>
@@ -219,6 +226,9 @@
       <span class="sel-divider"></span>
       <button id="noteBtn"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>Note</button>
     </div>
+    <div class="sel-group" id="saveGroup" hidden>
+      <button id="saveSelBtn"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg>Save to note</button>
+    </div>
     <span class="sel-divider" id="aiDivider"></span>
     <div class="sel-group" id="aiGroup">
     <button id="whatBtn"><svg viewBox="0 0 24 24" width="14" height="14"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .8-1 1.5V14M12 17.5v.01" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>What is this?</button>
@@ -237,7 +247,7 @@
       <div class="note-actions"><button id="noteEdit">Edit</button><button id="noteDelete">Delete</button></div>
     </div>
     <form class="note-edit" id="noteForm" hidden>
-      <textarea id="noteInput" rows="4" maxlength="2000" placeholder="Write a note…"></textarea>
+      <textarea id="noteInput" rows="4" maxlength="4000" placeholder="Write a note…"></textarea>
       <div class="note-actions"><button type="submit" class="primary">Save</button><button type="button" id="noteCancel">Cancel</button></div>
     </form>
   </div>

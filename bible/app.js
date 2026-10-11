@@ -304,18 +304,18 @@ function fixSpacing(root) {
 // Saved in this browser; synced with the reader's account when signed in.
 const HL_COLORS = ["honey", "sage", "sky", "rose"];
 function annotationFor(v, r = ref) { return (store.get("annotations", {})[r] || {})[v] || {}; }
-function setAnnotation(verses, patch) {
+function setAnnotation(verses, patch, r = ref) {
   const all = store.get("annotations", {});
-  const ch = all[ref] || {};
+  const ch = all[r] || {};
   for (const v of verses) {
     const next = { ...(ch[v] || {}), ...patch };
     if (!next.color) delete next.color;
     if (!next.note) delete next.note;
     if (Object.keys(next).length) ch[v] = next; else delete ch[v];
   }
-  if (Object.keys(ch).length) all[ref] = ch; else delete all[ref];
+  if (Object.keys(ch).length) all[r] = ch; else delete all[r];
   store.set("annotations", all);
-  renderAnnotations();
+  if (r === ref) renderAnnotations();
 }
 function renderAnnotations() {
   chapterEl.querySelectorAll(".note-mark").forEach((m) => m.remove());
@@ -349,6 +349,13 @@ $("hlClear").addEventListener("click", () => {
   setAnnotation(pendingSel.verses, { color: null });
   hidePop();
   window.getSelection().removeAllRanges();
+});
+$("saveSelBtn").addEventListener("click", () => {
+  const s = pendingSel;
+  if (!s?.noteTarget) return;
+  hidePop();
+  window.getSelection().removeAllRanges();
+  saveToNote(s.noteTarget, s.text, null);
 });
 $("noteBtn").addEventListener("click", () => {
   if (!pendingSel?.verses.length) return;
@@ -430,7 +437,7 @@ $("noteCancel").addEventListener("click", () => {
 });
 $("noteForm").addEventListener("submit", (e) => {
   e.preventDefault();
-  const text = $("noteInput").value.trim().slice(0, 2000);
+  const text = $("noteInput").value.trim().slice(0, 4000);
   setAnnotation(noteState.verses, { note: text || null });
   closeNote();
   if (text) toast("Note saved");
@@ -491,7 +498,12 @@ function readSelection() {
         .map((c) => Number(c.dataset.v))
     )].sort((a, b) => a - b);
   }
-  return { text, verses, ref: refFor(verses), rect: range.getBoundingClientRect() };
+  let noteTarget = null;
+  if (inChat) {
+    const ai = (range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement).closest(".msg-ai");
+    if (ai) noteTarget = noteTargetFor(Number(ai.dataset.idx));
+  }
+  return { text, verses, ref: refFor(verses), rect: range.getBoundingClientRect(), noteTarget };
 }
 
 function refFor(verses) {
@@ -504,11 +516,12 @@ function showPop() {
   const s = readSelection();
   if (!s) return hidePop();
   const canMark = s.verses.length > 0; // highlights/notes only on Bible text, not chat
-  if (!aiOn && !canMark) return hidePop();
+  $("saveGroup").hidden = !s.noteTarget;
+  if (!aiOn && !canMark && !s.noteTarget) return hidePop();
   pendingSel = s;
   $("markGroup").hidden = !canMark;
   $("aiGroup").hidden = !aiOn;
-  $("aiDivider").hidden = !(aiOn && canMark);
+  $("aiDivider").hidden = !(aiOn && (canMark || s.noteTarget));
   const cur = canMark ? annotationFor(s.verses[0]).color : null;
   selPop.querySelectorAll(".hl-dot").forEach((d) => d.classList.toggle("current", d.dataset.color === cur));
   $("hlClear").hidden = !s.verses.some((v) => annotationFor(v).color);
@@ -580,12 +593,65 @@ function closeChat() {
 }
 $("chatToggle").addEventListener("click", () => { openChat(); input.focus(); });
 $("closeChatBtn").addEventListener("click", closeChat);
+// ---------- Chat history ----------
+// "New chat" files the current conversation away instead of deleting it.
+function archiveCurrent() {
+  const real = messages.filter((m) => m.role !== "assistant" || m.content);
+  if (!real.some((m) => m.role === "assistant")) return;
+  const firstQ = real.find((m) => m.role === "user") || {};
+  const title = (firstQ.quote ? `“${firstQ.quote}”` : firstQ.content || "Chat").slice(0, 80);
+  const history = store.get("chatHistory", []);
+  history.unshift({ id: Date.now(), at: new Date().toISOString(), title, ref: firstQ.ref || firstQ.chapterRef || "", messages: real });
+  store.set("chatHistory", history.slice(0, 50));
+}
 $("newChatBtn").addEventListener("click", () => {
   if (busy) return;
+  archiveCurrent();
   messages = [];
   store.set("messages", messages);
   renderLog();
   markDiscussed();
+  showHistory(false);
+});
+function showHistory(open = $("chatHistory").hidden) {
+  $("chatHistory").hidden = !open;
+  chatLog.hidden = open;
+  $("historyBtn").setAttribute("aria-pressed", String(open));
+  if (open) renderHistory();
+}
+function renderHistory() {
+  const history = store.get("chatHistory", []);
+  const fmt = (iso) => new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  $("historyList").innerHTML = history.length
+    ? history.map((h, i) => `
+        <div class="history-item" data-i="${i}">
+          <button class="history-open" data-i="${i}">
+            <span class="history-title">${esc(h.title)}</span>
+            <span class="history-meta">${esc(h.ref)}${h.ref ? " · " : ""}${fmt(h.at)} · ${h.messages.filter((m) => m.role === "user").length} question${h.messages.filter((m) => m.role === "user").length === 1 ? "" : "s"}</span>
+          </button>
+          <button class="history-del" data-i="${i}" title="Delete" aria-label="Delete this chat">×</button>
+        </div>`).join("")
+    : '<p class="history-empty">No past chats yet. When you start a new chat with +, the old one is saved here.</p>';
+}
+$("historyBtn").addEventListener("click", () => showHistory());
+$("historyList").addEventListener("click", (e) => {
+  const history = store.get("chatHistory", []);
+  const del = e.target.closest(".history-del");
+  const open = e.target.closest(".history-open");
+  if (del) {
+    history.splice(Number(del.dataset.i), 1);
+    store.set("chatHistory", history);
+    renderHistory();
+  } else if (open && !busy) {
+    const [chosen] = history.splice(Number(open.dataset.i), 1);
+    store.set("chatHistory", history);
+    archiveCurrent(); // keep whatever was open
+    messages = chosen.messages;
+    store.set("messages", messages);
+    showHistory(false);
+    renderLog();
+    markDiscussed();
+  }
 });
 
 $("composer").addEventListener("submit", (e) => {
@@ -656,11 +722,10 @@ async function send(userMsg) {
       : `\n\n⚠️ Couldn't reach the AI (${err.message}). Please try again.`;
   }
   if (!reply.content.trim()) reply.content = "⚠️ No reply came back. Try asking again.";
-  aiEl.innerHTML = md(reply.content);
   busy = false;
   $("sendBtn").disabled = false;
   store.set("messages", messages);
-  scrollChat();
+  renderLog();
 }
 
 // Where questions go: the local companion on the owner's Mac, or the hosted `ask` function.
@@ -705,7 +770,7 @@ $("pwCancel").addEventListener("click", () => {
 function renderLog() {
   $("chatEmpty").hidden = messages.length > 0;
   chatLog.querySelectorAll(".msg-user, .msg-ai").forEach((n) => n.remove());
-  for (const m of messages) {
+  messages.forEach((m, i) => {
     const el = document.createElement("div");
     if (m.role === "user") {
       el.className = "msg-user";
@@ -727,11 +792,48 @@ function renderLog() {
       el.appendChild(b);
     } else {
       el.className = "msg-ai";
+      el.dataset.idx = i;
       el.innerHTML = m.content ? md(m.content) : '<span class="typing"><i></i><i></i><i></i></span>';
+      const target = noteTargetFor(i);
+      if (m.content && target && !(busy && i === messages.length - 1)) {
+        const bar = document.createElement("div");
+        bar.className = "msg-actions";
+        const b = document.createElement("button");
+        b.className = "msg-save";
+        b.textContent = m.savedToNote ? "Saved to note ✓" : `Save to note (${target.label})`;
+        b.disabled = !!m.savedToNote;
+        b.addEventListener("click", () => {
+          saveToNote(target, stripMd(m.content), messages[i - 1]);
+          m.savedToNote = true;
+          store.set("messages", messages);
+          renderLog();
+        });
+        bar.appendChild(b);
+        el.appendChild(bar);
+      }
     }
     chatLog.appendChild(el);
-  }
+  });
   scrollChat();
+}
+
+// Which verse(s) an AI answer is about: the quote in the question just before it.
+function noteTargetFor(i) {
+  const q = messages[i - 1];
+  if (!q || q.role !== "user" || !q.chapterRef || !q.verses?.length) return null;
+  return { r: q.chapterRef, verses: q.verses, label: q.ref || q.chapterRef };
+}
+function stripMd(t) {
+  return String(t).replace(/\*\*([^*]+)\*\*/g, "$1").replace(/(^|[^*])\*([^*\n]+)\*/g, "$1$2").replace(/`([^`]+)`/g, "$1").trim();
+}
+// Append text to the note on those verses (keeps anything already written there).
+function saveToNote(target, text, question) {
+  const existing = annotationFor(target.verses[0], target.r).note || "";
+  const header = question?.content && question.content !== "What is this?" ? `Q: ${question.content}\n` : "";
+  const entry = header + text;
+  const note = (existing ? existing + "\n\n— " : "") + entry;
+  setAnnotation(target.verses, { note: note.slice(0, 4000) }, target.r);
+  toast(`Saved to your note on ${target.label}`);
 }
 function scrollChat() { chatLog.scrollTop = chatLog.scrollHeight; }
 
@@ -878,7 +980,7 @@ function toast(text) {
 // ---------- Sign-in + sync (Supabase) ----------
 // Signed in as the owner, settings and chats sync across devices (table bible_state).
 // Signed out, everything stays in this browser only.
-const SYNC_KEYS = ["ref", "version", "textSize", "recents", "messages", "bible_name", "annotations"];
+const SYNC_KEYS = ["ref", "version", "textSize", "recents", "messages", "bible_name", "annotations", "chatHistory"];
 const SBC = window.SUPABASE_CONFIG;
 const sb = SBC && window.supabase ? window.supabase.createClient(SBC.url, SBC.anonKey) : null;
 const authReady = sb ? sb.auth.getSession() : Promise.resolve({ data: { session: null } }); // also reads a sign-in link's #access_token
@@ -895,7 +997,7 @@ async function pushSync() {
   if (!user) return;
   const { error } = await sb.from("bible_state").upsert({
     user_id: user.id,
-    state: { ref: store.get("ref", ref), version: store.get("version", version), textSize: store.get("textSize", DEFAULT_SIZE), name: store.get("bible_name", ""), annotations: store.get("annotations", {}), recents: store.get("recents", []) },
+    state: { ref: store.get("ref", ref), version: store.get("version", version), textSize: store.get("textSize", DEFAULT_SIZE), name: store.get("bible_name", ""), annotations: store.get("annotations", {}), chatHistory: store.get("chatHistory", []), recents: store.get("recents", []) },
     messages: store.get("messages", []),
     updated_at: new Date(Number(store.get("localUpdatedAt", Date.now()))).toISOString(),
   });
@@ -916,6 +1018,7 @@ async function pullSync() {
     if (st.textSize != null) localStorage.setItem("textSize", JSON.stringify(clampSize(st.textSize)));
     if (st.name) localStorage.setItem("bible_name", JSON.stringify(String(st.name).slice(0, 40)));
     if (st.annotations && typeof st.annotations === "object") localStorage.setItem("annotations", JSON.stringify(st.annotations));
+    if (Array.isArray(st.chatHistory)) localStorage.setItem("chatHistory", JSON.stringify(st.chatHistory));
     if (st.recents) localStorage.setItem("recents", JSON.stringify(st.recents));
     localStorage.setItem("messages", JSON.stringify(data.messages || []));
     localStorage.setItem("localUpdatedAt", String(new Date(data.updated_at).getTime()));
@@ -947,7 +1050,7 @@ $("signInForm").addEventListener("submit", async (e) => {
 $("signOutBtn").addEventListener("click", async () => {
   await sb.auth.signOut();
   // Clear this browser's copy of the synced data so the next person on this device starts fresh.
-  ["messages", "recents", "ref", "localUpdatedAt", "chatOpen", "annotations"].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
+  ["messages", "recents", "ref", "localUpdatedAt", "chatOpen", "annotations", "chatHistory"].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
   location.reload();
 });
 
