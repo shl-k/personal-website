@@ -46,8 +46,8 @@ create table if not exists public.course_events (
   session_id  uuid not null,                -- new per page load
   event       text not null check (event in (
                 'visit', 'gate_view', 'password_attempt', 'unlock',
-                'onboard_done', 'week_open', 'week_complete', 'leave')),
-  detail      text check (char_length(detail) <= 40),   -- e.g. 'password' | 'backdoor' | week number
+                'onboard_done', 'identify', 'week_open', 'week_complete', 'leave')),
+  detail      text check (char_length(detail) <= 40),   -- 'password' | 'backdoor' | week number | first name (onboard_done/identify)
   seconds     integer check (seconds between 0 and 86400),
   device      text check (device in ('mobile', 'desktop')),
   referrer    text check (char_length(referrer) <= 200)
@@ -71,3 +71,9 @@ create policy "owner reads events" on public.course_events
 revoke all on public.course_events from anon, authenticated;
 grant insert on public.course_events to anon, authenticated;
 grant select on public.course_events to authenticated;
+
+-- Migration (Oct 2026): allow the 'identify' event (first name of returning visitors).
+alter table public.course_events drop constraint if exists course_events_event_check;
+alter table public.course_events add constraint course_events_event_check check (event in (
+  'visit', 'gate_view', 'password_attempt', 'unlock',
+  'onboard_done', 'identify', 'week_open', 'week_complete', 'leave'));

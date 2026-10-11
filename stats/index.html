@@ -62,7 +62,7 @@
     table { border-collapse: collapse; width: 100%; margin-top: 8px; }
     th, td { text-align: left; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--line); font-weight: 400; }
     th { color: var(--muted); }
-    td.n, th.n { text-align: right; }
+    td.n, th.n { text-align: right; padding-right: 18px; }
     .empty { color: var(--muted); font-size: 13px; }
     /* sign-in */
     .signin { max-width: 380px; margin: 18vh auto 0; }
@@ -111,6 +111,11 @@
       <div class="card">
         <h2>Unique visitors per day</h2>
         <div id="daily"></div>
+      </div>
+
+      <div class="card">
+        <h2>People</h2>
+        <div id="people"></div>
       </div>
 
       <div class="grid2">
@@ -272,6 +277,35 @@
       const refCounts = {};
       by("visit").forEach((r) => { const k = r.referrer || "direct / unknown"; (refCounts[k] = refCounts[k] || new Set()).add(r.visitor_id); });
       hbars($("refs"), Object.entries(refCounts).map(([label, s]) => ({ label, value: s.size })).sort((a, b) => b.value - a.value).slice(0, 8), visitors);
+
+      // People: one row per visitor, named if they told the course their first name.
+      const names = {};
+      events.forEach((r) => { if ((r.event === "onboard_done" || r.event === "identify") && r.detail) names[r.visitor_id] = r.detail; });
+      const people = {};
+      rows.forEach((r) => {
+        const p = (people[r.visitor_id] = people[r.visitor_id] || { first: r.created_at, last: r.created_at, sessions: new Set(), weeks: new Set(), done: new Set(), secs: 0, inside: false });
+        p.last = r.created_at;
+        if (r.event === "visit") p.sessions.add(r.session_id);
+        if (r.event === "week_open") p.weeks.add(r.detail);
+        if (r.event === "week_complete") p.done.add(r.detail);
+        if (r.event === "unlock" || r.event === "identify") p.inside = true;
+        if (r.event === "leave") p.secs += r.seconds || 0;
+      });
+      const list = Object.entries(people).sort((a, b) => (a[1].last < b[1].last ? 1 : -1));
+      const named = list.filter(([v]) => names[v]);
+      const anon = list.length - named.length;
+      const fmtWhen = (iso) => new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      $("people").innerHTML = named.length || anon ? `
+        <table>
+          <tr><th>name</th><th>first seen</th><th>last seen</th><th class="n">visits</th><th>weeks opened</th><th class="n">done</th><th class="n">time</th></tr>
+          ${named.map(([v, p]) => `<tr>
+            <td>${esc(names[v])}</td><td>${fmtWhen(p.first)}</td><td>${fmtWhen(p.last)}</td>
+            <td class="n">${p.sessions.size}</td>
+            <td>${[...p.weeks].sort((a, b) => a - b).join(", ") || "–"}</td>
+            <td class="n">${p.done.size}</td><td class="n">${fmtDur(p.secs)}</td></tr>`).join("")}
+        </table>
+        <p class="note">${anon} visitor${anon === 1 ? "" : "s"} without a name (never got past the password, or onboarded before names were tracked).</p>`
+        : '<div class="empty">No visitors in this range yet.</div>';
 
       const mobile = uniq(rows.filter((r) => r.event === "visit" && r.device === "mobile"));
       $("foot").textContent = `${rows.length} events in range · ${pct(mobile, visitors)} of visitors on mobile · updated ${new Date().toLocaleTimeString()}`;

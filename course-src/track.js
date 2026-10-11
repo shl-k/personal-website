@@ -1,5 +1,6 @@
 // Anonymous usage tracking for the course → Supabase table `course_events`.
-// Each browser gets a random visitor id; no names, emails, or typed text are sent.
+// Each browser gets a random visitor id. The only personal detail sent is the first name
+// people enter at onboarding (they're told on that screen). No emails or other typed text.
 // Insert-only: visitors can add events but never read them (see supabase/schema.sql).
 
 const CFG = window.SUPABASE_CONFIG || null;

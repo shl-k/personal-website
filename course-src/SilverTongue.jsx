@@ -362,7 +362,10 @@ function Onboarding({ onDone }) {
               color: T.ink, textAlign: "center", outline: "none",
             }}
           />
-          <div style={{ marginTop: 28 }}>
+          <p style={{ fontFamily: T.serif, fontStyle: "italic", fontSize: 13, color: T.muted, margin: "12px 0 0" }}>
+            Your first name is shared with sdp, so sdp can see who's taking the course.
+          </p>
+          <div style={{ marginTop: 24 }}>
             <Btn primary disabled={!name.trim()} onClick={() => setStage(1)}>Begin</Btn>
           </div>
         </div>
@@ -668,6 +671,7 @@ export default function SilverTongue() {
     (async () => {
       const saved = await loadState();
       if (saved && saved.onboarded) {
+        if (saved.name) track("identify", saved.name);
         setState(saved);
         setView({ page: "map" });
       } else {
@@ -695,7 +699,7 @@ export default function SilverTongue() {
   }
 
   const onOnboardDone = (name, week) => {
-    track("onboard_done");
+    track("onboard_done", name);
     const next = { ...state, name, onboarded: true };
     persist(next);
     setView(week ? { page: "week", week } : { page: "map" });
