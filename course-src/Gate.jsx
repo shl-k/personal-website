@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { track } from "./track.js";
 import { T } from "./SilverTongue.jsx";
 
 /* ————————————————————————————————————————————————
@@ -51,8 +52,10 @@ function PasswordGate({ onUnlock }) {
   const submit = () => {
     if (value.trim().toLowerCase() === SECRET) {
       unlock();
+      track("unlock", "password");
       onUnlock();
     } else {
+      track("password_attempt", "wrong");
       setMiss((m) => m + 1);
       setValue("");
     }
@@ -132,9 +135,14 @@ function BackdoorFound({ onEnter }) {
 export default function Gate({ children }) {
   const [status, setStatus] = useState(checkStored);
 
+  useEffect(() => {
+    if (status === "locked") track("gate_view");
+    if (status === "backdoor") track("gate_view", "backdoor_found");
+  }, []); // eslint-disable-line
+
   if (status === "unlocked") return children;
   if (status === "backdoor") {
-    return <BackdoorFound onEnter={() => { unlock(); setStatus("unlocked"); }} />;
+    return <BackdoorFound onEnter={() => { unlock(); track("unlock", "backdoor"); setStatus("unlocked"); }} />;
   }
   return <PasswordGate onUnlock={() => setStatus("unlocked")} />;
 }

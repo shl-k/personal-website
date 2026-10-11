@@ -13,7 +13,10 @@ const selPop = $("selPop");
 
 const store = {
   get(k, d) { try { const v = localStorage.getItem(k); return v == null ? d : JSON.parse(v); } catch { return d; } },
-  set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  set(k, v) {
+    try { localStorage.setItem(k, JSON.stringify(v)); } catch {}
+    if (SYNC_KEYS.includes(k)) { try { localStorage.setItem("localUpdatedAt", String(Date.now())); } catch {} scheduleSync(); }
+  },
 };
 
 const CFG = window.BIBLE_CONFIG || {};
@@ -540,17 +543,99 @@ function toast(text) {
   toast.t = setTimeout(() => (t.hidden = true), 2200);
 }
 
+// ---------- Sign-in + sync (Supabase) ----------
+// Signed in as the owner, settings and chats sync across devices (table bible_state).
+// Signed out, everything stays in this browser only.
+const SYNC_KEYS = ["ref", "version", "sizeIdx", "recents", "messages"];
+const SBC = window.SUPABASE_CONFIG;
+const sb = SBC && window.supabase ? window.supabase.createClient(SBC.url, SBC.anonKey) : null;
+const authReady = sb ? sb.auth.getSession() : Promise.resolve({ data: { session: null } }); // also reads a sign-in link's #access_token
+let user = null;
+let syncTimer = null;
+
+function scheduleSync() {
+  if (!user) return;
+  clearTimeout(syncTimer);
+  syncTimer = setTimeout(pushSync, 1200);
+}
+
+async function pushSync() {
+  if (!user) return;
+  const { error } = await sb.from("bible_state").upsert({
+    user_id: user.id,
+    state: { ref: store.get("ref", ref), version: store.get("version", version), sizeIdx: store.get("sizeIdx", 1), recents: store.get("recents", []) },
+    messages: store.get("messages", []),
+    updated_at: new Date(Number(store.get("localUpdatedAt", Date.now()))).toISOString(),
+  });
+  if (error) console.warn("Sync failed:", error.message);
+}
+
+// Newer side wins: pull the cloud copy if it's newer than this browser's, otherwise push ours.
+async function pullSync() {
+  if (!user) return false;
+  const { data, error } = await sb.from("bible_state").select("state, messages, updated_at").eq("user_id", user.id).maybeSingle();
+  if (error) { console.warn("Sync failed:", error.message); return false; }
+  const localAt = Number(store.get("localUpdatedAt", 0));
+  if (!data || new Date(data.updated_at).getTime() <= localAt) { await pushSync(); return false; }
+  const st = data.state || {};
+  try {
+    if (st.ref) localStorage.setItem("ref", JSON.stringify(st.ref));
+    if (st.version) localStorage.setItem("version", JSON.stringify(st.version));
+    if (st.sizeIdx != null) localStorage.setItem("sizeIdx", JSON.stringify(st.sizeIdx));
+    if (st.recents) localStorage.setItem("recents", JSON.stringify(st.recents));
+    localStorage.setItem("messages", JSON.stringify(data.messages || []));
+    localStorage.setItem("localUpdatedAt", String(new Date(data.updated_at).getTime()));
+  } catch {}
+  return true;
+}
+
+function renderAccount() {
+  const owner = store.get("localAI", false) || !!user;
+  $("account").hidden = !sb || !owner;
+  $("accountOut").hidden = !!user;
+  $("accountIn").hidden = !user;
+  if (user) $("accountEmail").textContent = user.email;
+}
+
+$("signInBtn").addEventListener("click", () => {
+  $("signInBtn").hidden = true;
+  $("signInForm").hidden = false;
+  $("signInEmail").value = (SBC && SBC.owner) || "";
+  $("signInEmail").focus();
+});
+$("signInForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const email = $("signInEmail").value.trim();
+  $("accountNote").textContent = "Sending…";
+  const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+  $("accountNote").textContent = error ? `Couldn't send: ${error.message}` : "Check your email and tap the sign-in link on this device.";
+});
+$("signOutBtn").addEventListener("click", async () => {
+  await sb.auth.signOut();
+  user = null;
+  renderAccount();
+  toast("Signed out. This device keeps its own copy.");
+});
+
 // ---------- Boot ----------
 (async function init() {
+  const { data: auth } = await authReady; // before touching the URL hash
+  user = auth?.session?.user || null;
+  if (user && SBC && user.email !== SBC.owner) user = null; // only the owner syncs
+  const hadHash = !!readHash();
+  if (await pullSync()) sizeIdx = store.get("sizeIdx", 1);
+  renderAccount();
   applySize();
   [versions, aiOn] = await Promise.all([probeVersions(), detectAi()]);
   app.classList.toggle("no-ai", !aiOn);
+  renderAccount(); // ?me (handled in detectAi) marks this as the owner's device
   const saved = store.get("version", null);
   version = versions.includes(saved) ? saved : versions[0];
-  ref = readHash() || store.get("ref", "LUK.3");
+  ref = (hadHash && readHash()) || store.get("ref", "LUK.3");
   history.replaceState(null, "", "#" + ref);
   messages = store.get("messages", []).filter((m) => m.role !== "assistant" || m.content);
   renderLog();
   await loadChapter();
   if (aiOn && store.get("chatOpen", false) && messages.length) openChat();
+  if (user) toast("Synced");
 })();

@@ -33,6 +33,20 @@
         <div class="nav-label">Recently read</div>
         <div class="recents" id="recents"></div>
       </nav>
+      <div class="account" id="account" hidden>
+        <div id="accountOut">
+          <button class="account-btn" id="signInBtn">Sign in to sync</button>
+          <form class="account-form" id="signInForm" hidden>
+            <input type="email" id="signInEmail" placeholder="you@email.com" autocomplete="email" required />
+            <button type="submit">Send link</button>
+          </form>
+          <div class="account-note" id="accountNote"></div>
+        </div>
+        <div id="accountIn" hidden>
+          <div class="account-status"><span class="sync-dot"></span><span id="accountEmail"></span></div>
+          <button class="account-link" id="signOutBtn">Sign out</button>
+        </div>
+      </div>
       <div class="sidebar-foot">
         <span class="foot-verse">“Your word is a lamp to my feet, and a light for my path.”</span>
         <span class="foot-ref">Psalm 119:105</span>
@@ -130,6 +144,8 @@
 
   <div class="toast" id="toast" hidden></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/supabase-config.js"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
 </body>

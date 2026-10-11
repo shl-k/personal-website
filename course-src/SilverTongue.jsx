@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { track } from "./track.js";
 
 /* ————————————————————————————————————————————————
    THE SILVER TONGUE — an 8-week course by sdp
@@ -676,6 +677,10 @@ export default function SilverTongue() {
     })();
   }, []);
 
+  useEffect(() => {
+    if (view.page === "week") track("week_open", view.week);
+  }, [view.page, view.week]);
+
   const persist = useCallback((next) => {
     setState(next);
     saveState(next);
@@ -690,6 +695,7 @@ export default function SilverTongue() {
   }
 
   const onOnboardDone = (name, week) => {
+    track("onboard_done");
     const next = { ...state, name, onboarded: true };
     persist(next);
     setView(week ? { page: "week", week } : { page: "map" });
@@ -697,6 +703,7 @@ export default function SilverTongue() {
 
   const toggleDone = (week) => {
     const has = state.completed.includes(week);
+    if (!has) track("week_complete", week);
     const completed = has ? state.completed.filter((n) => n !== week) : [...state.completed, week];
     persist({ ...state, completed });
   };

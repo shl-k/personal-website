@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="robots" content="noindex" />
+  <title>stats</title>
+  <style>
+    :root {
+      --bg: #131313; --card: #1c1c1c; --line: #2a2a2a;
+      --ink: #f2f2f2; --ink-2: #b5b5b5; --muted: #7d7d7d;
+      --mark: #d9b44a; --mark-hover: #f0cd62;
+      --mono: "Monaco", "Menlo", "Consolas", monospace;
+      color-scheme: dark;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--mono); }
+    main { max-width: 920px; margin: 0 auto; padding: 32px 16px 64px; }
+    header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 24px; }
+    h1 { font-size: 18px; margin: 0; letter-spacing: .02em; }
+    h1 a { color: var(--muted); text-decoration: none; }
+    h2 { font-size: 12px; font-weight: 400; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); margin: 0 0 14px; }
+    .controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+    .seg button, .btn {
+      font: 12px var(--mono); color: var(--ink-2); background: var(--card);
+      border: 1px solid var(--line); padding: 6px 10px; cursor: pointer;
+    }
+    .seg { display: inline-flex; }
+    .seg button + button { border-left: 0; }
+    .seg button[aria-pressed="true"] { color: #000; background: var(--ink); border-color: var(--ink); }
+    .btn:hover, .seg button:hover { color: var(--ink); }
+    .card { background: var(--card); border: 1px solid var(--line); padding: 18px; margin-bottom: 16px; }
+    .tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 16px; }
+    .tile { background: var(--card); border: 1px solid var(--line); padding: 16px; }
+    .tile .k { font-size: 11px; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); }
+    .tile .v { font-size: 28px; margin-top: 6px; }
+    .tile .s { font-size: 12px; color: var(--ink-2); margin-top: 2px; }
+    .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .grid2 .card { margin-bottom: 0; }
+    /* horizontal bars */
+    .hbar { display: grid; grid-template-columns: 150px 1fr 56px; align-items: center; gap: 10px; padding: 5px 0; }
+    .hbar .lab { color: var(--ink-2); font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .hbar .track { height: 14px; position: relative; }
+    .hbar .fill { height: 100%; background: var(--mark); border-radius: 0 4px 4px 0; min-width: 2px; }
+    .hbar:hover .fill { background: var(--mark-hover); }
+    .hbar .num { text-align: right; font-size: 12.5px; }
+    /* daily column chart */
+    .cols { position: relative; height: 180px; display: flex; align-items: flex-end; gap: 2px; border-bottom: 1px solid var(--line); }
+    .col { flex: 1; height: 100%; display: flex; align-items: flex-end; cursor: default; }
+    .col i { display: block; width: 100%; background: var(--mark); border-radius: 4px 4px 0 0; min-height: 0; }
+    .col:hover i { background: var(--mark-hover); }
+    .axis { display: flex; justify-content: space-between; color: var(--muted); font-size: 11px; margin-top: 6px; }
+    .ymax { position: absolute; top: -2px; left: 0; color: var(--muted); font-size: 11px; transform: translateY(-100%); }
+    .tip {
+      position: fixed; pointer-events: none; z-index: 10; background: #000; color: var(--ink);
+      border: 1px solid var(--line); padding: 6px 9px; font-size: 12px; white-space: nowrap;
+      transform: translate(-50%, calc(-100% - 10px));
+    }
+    .tip[hidden] { display: none; }
+    details { margin-top: 12px; color: var(--ink-2); font-size: 12px; }
+    summary { cursor: pointer; color: var(--muted); }
+    table { border-collapse: collapse; width: 100%; margin-top: 8px; }
+    th, td { text-align: left; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--line); font-weight: 400; }
+    th { color: var(--muted); }
+    td.n, th.n { text-align: right; }
+    .empty { color: var(--muted); font-size: 13px; }
+    /* sign-in */
+    .signin { max-width: 380px; margin: 18vh auto 0; }
+    .signin p { color: var(--ink-2); }
+    .signin form { display: flex; gap: 6px; margin-top: 14px; }
+    .signin input { flex: 1; min-width: 0; font: 13px var(--mono); padding: 8px 10px; background: var(--card); color: var(--ink); border: 1px solid var(--line); outline: none; }
+    .signin input:focus { border-color: var(--muted); }
+    .signin button { font: 13px var(--mono); padding: 8px 12px; background: var(--ink); color: #000; border: 0; cursor: pointer; }
+    .note { color: var(--muted); font-size: 12.5px; margin-top: 10px; min-height: 1em; }
+    [hidden] { display: none !important; }
+    @media (max-width: 720px) {
+      .tiles { grid-template-columns: 1fr 1fr; }
+      .grid2 { grid-template-columns: 1fr; }
+      .hbar { grid-template-columns: 110px 1fr 44px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="signin" id="signin" hidden>
+      <h1><a href="/">sdp</a> / stats</h1>
+      <p>Private. Sign in with the owner email to continue.</p>
+      <form id="signinForm">
+        <input type="email" id="email" placeholder="you@email.com" autocomplete="email" required />
+        <button type="submit">Send link</button>
+      </form>
+      <div class="note" id="signinNote"></div>
+    </section>
+
+    <section id="dash" hidden>
+      <header>
+        <h1><a href="/">sdp</a> / silver tongue stats</h1>
+        <div class="controls">
+          <div class="seg" id="range" role="group" aria-label="Time range">
+            <button data-days="7">7d</button>
+            <button data-days="30" aria-pressed="true">30d</button>
+            <button data-days="90">90d</button>
+            <button data-days="0">all</button>
+          </div>
+          <button class="btn" id="signOut">sign out</button>
+        </div>
+      </header>
+
+      <div class="tiles" id="tiles"></div>
+
+      <div class="card">
+        <h2>Unique visitors per day</h2>
+        <div id="daily"></div>
+      </div>
+
+      <div class="grid2">
+        <div class="card">
+          <h2>Funnel (unique visitors)</h2>
+          <div id="funnel"></div>
+        </div>
+        <div class="card">
+          <h2>Weeks opened (unique visitors)</h2>
+          <div id="weeks"></div>
+        </div>
+      </div>
+      <div style="height:16px"></div>
+      <div class="grid2">
+        <div class="card">
+          <h2>How they got in</h2>
+          <div id="method"></div>
+        </div>
+        <div class="card">
+          <h2>Where they came from</h2>
+          <div id="refs"></div>
+        </div>
+      </div>
+      <p class="note" id="foot"></p>
+    </section>
+  </main>
+  <div class="tip" id="tip" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="/supabase-config.js"></script>
+  <script>
+  (async function () {
+    const CFG = window.SUPABASE_CONFIG;
+    const sb = window.supabase.createClient(CFG.url, CFG.anonKey);
+    const $ = (id) => document.getElementById(id);
+    const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+    let events = [];
+    let days = 30;
+
+    // ---------- auth ----------
+    const { data: { session } } = await sb.auth.getSession();
+    const user = session && session.user;
+    if (!user || user.email !== CFG.owner) {
+      $("signin").hidden = false;
+      $("email").value = CFG.owner;
+      if (user) $("signinNote").textContent = `Signed in as ${user.email}, which isn't the owner.`;
+      $("signinForm").addEventListener("submit", async (e) => {
+        e.preventDefault();
+        $("signinNote").textContent = "Sending…";
+        const { error } = await sb.auth.signInWithOtp({ email: $("email").value.trim(), options: { emailRedirectTo: location.origin + location.pathname } });
+        $("signinNote").textContent = error ? `Couldn't send: ${error.message}` : "Check your email and tap the link on this device.";
+      });
+      return;
+    }
+    $("dash").hidden = false;
+    $("signOut").addEventListener("click", async () => { await sb.auth.signOut(); location.reload(); });
+
+    // ---------- data ----------
+    async function load() {
+      const rows = [];
+      for (let from = 0; ; from += 1000) {
+        const { data, error } = await sb.from("course_events")
+          .select("created_at, visitor_id, session_id, event, detail, seconds, device, referrer")
+          .order("created_at", { ascending: true }).range(from, from + 999);
+        if (error) { $("foot").textContent = "Couldn't load: " + error.message; break; }
+        rows.push(...data);
+        if (data.length < 1000) break;
+      }
+      events = rows;
+      render();
+    }
+
+    // ---------- helpers ----------
+    const uniq = (rows) => new Set(rows.map((r) => r.visitor_id)).size;
+    const dayKey = (d) => d.toISOString().slice(0, 10);
+    const fmtDay = (k) => new Date(k + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" });
+    const pct = (a, b) => (b ? Math.round((100 * a) / b) + "%" : "–");
+    const fmtDur = (s) => (s < 60 ? `${s}s` : `${Math.floor(s / 60)}m ${String(s % 60).padStart(2, "0")}s`);
+
+    const tip = $("tip");
+    function bindTips(root) {
+      root.querySelectorAll("[data-tip]").forEach((el) => {
+        el.addEventListener("mousemove", (e) => { tip.hidden = false; tip.textContent = el.dataset.tip; tip.style.left = e.clientX + "px"; tip.style.top = e.clientY + "px"; });
+        el.addEventListener("mouseleave", () => (tip.hidden = true));
+      });
+    }
+
+    function hbars(el, items, total) {
+      if (!items.length || !items.some((i) => i.value)) { el.innerHTML = '<div class="empty">No data yet.</div>'; return; }
+      const max = Math.max(...items.map((i) => i.value), 1);
+      el.innerHTML = items.map((i) => `
+        <div class="hbar" data-tip="${esc(i.label)}: ${i.value}${total ? ` (${pct(i.value, total)})` : ""}">
+          <span class="lab">${esc(i.label)}</span>
+          <span class="track"><span class="fill" style="display:block;width:${(100 * i.value) / max}%"></span></span>
+          <span class="num">${i.value}</span>
+        </div>`).join("");
+      bindTips(el);
+    }
+
+    // ---------- render ----------
+    function render() {
+      const since = days ? Date.now() - days * 864e5 : 0;
+      const rows = events.filter((r) => new Date(r.created_at).getTime() >= since);
+      const by = (ev, detail) => rows.filter((r) => r.event === ev && (detail === undefined || r.detail === detail));
+
+      const visitors = uniq(by("visit"));
+      const gate = uniq(by("gate_view"));
+      const inside = uniq(by("unlock"));
+      const onboarded = uniq(by("onboard_done"));
+      const opened = uniq(by("week_open"));
+      const leaves = by("leave").map((r) => r.seconds || 0).sort((a, b) => a - b);
+      const median = leaves.length ? leaves[Math.floor(leaves.length / 2)] : 0;
+      const sessions = new Set(by("visit").map((r) => r.session_id)).size;
+
+      $("tiles").innerHTML = [
+        ["Visitors", visitors, `${sessions} visits`],
+        ["Got in", inside, `${pct(inside, gate)} of those who hit the gate`],
+        ["Opened a week", opened, `${pct(opened, visitors)} of visitors`],
+        ["Median time", fmtDur(median), `${leaves.length} timed visits`],
+      ].map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
+
+      // daily unique visitors
+      const start = days ? new Date(Date.now() - (days - 1) * 864e5) : (rows[0] ? new Date(rows[0].created_at) : new Date());
+      const buckets = new Map();
+      for (let d = new Date(dayKey(start) + "T00:00:00Z"); d <= new Date(); d = new Date(d.getTime() + 864e5)) buckets.set(dayKey(d), new Set());
+      by("visit").forEach((r) => { const k = r.created_at.slice(0, 10); if (buckets.has(k)) buckets.get(k).add(r.visitor_id); });
+      const series = [...buckets].map(([k, s]) => ({ k, n: s.size }));
+      const ymax = Math.max(1, ...series.map((s) => s.n));
+      $("daily").innerHTML = `
+        <div class="cols" role="img" aria-label="Unique visitors per day">
+          <span class="ymax">${ymax}</span>
+          ${series.map((s) => `<div class="col" data-tip="${fmtDay(s.k)}: ${s.n} visitor${s.n === 1 ? "" : "s"}"><i style="height:${(100 * s.n) / ymax}%"></i></div>`).join("")}
+        </div>
+        <div class="axis"><span>${series.length ? fmtDay(series[0].k) : ""}</span><span>${series.length ? fmtDay(series[series.length - 1].k) : ""}</span></div>
+        <details><summary>table</summary><table><tr><th>day</th><th class="n">visitors</th></tr>
+          ${series.filter((s) => s.n).reverse().map((s) => `<tr><td>${fmtDay(s.k)}</td><td class="n">${s.n}</td></tr>`).join("") || '<tr><td colspan="2">No visits in this range.</td></tr>'}
+        </table></details>`;
+      bindTips($("daily"));
+
+      hbars($("funnel"), [
+        { label: "Visited", value: visitors },
+        { label: "Saw the gate", value: gate },
+        { label: "Tried a password", value: uniq(by("password_attempt")) },
+        { label: "Got in", value: inside },
+        { label: "Finished intro", value: onboarded },
+        { label: "Opened a week", value: opened },
+      ], visitors);
+
+      const weekItems = [];
+      for (let w = 1; w <= 8; w++) weekItems.push({ label: `Week ${w}`, value: uniq(by("week_open", String(w))) });
+      const lastOpened = weekItems.reduce((m, i, idx) => (i.value ? idx : m), -1);
+      hbars($("weeks"), weekItems.slice(0, Math.max(1, lastOpened + 1)), visitors);
+
+      hbars($("method"), [
+        { label: "Password", value: uniq(by("unlock", "password")) },
+        { label: "Back door", value: uniq(by("unlock", "backdoor")) },
+      ], inside);
+
+      const refCounts = {};
+      by("visit").forEach((r) => { const k = r.referrer || "direct / unknown"; (refCounts[k] = refCounts[k] || new Set()).add(r.visitor_id); });
+      hbars($("refs"), Object.entries(refCounts).map(([label, s]) => ({ label, value: s.size })).sort((a, b) => b.value - a.value).slice(0, 8), visitors);
+
+      const mobile = uniq(rows.filter((r) => r.event === "visit" && r.device === "mobile"));
+      $("foot").textContent = `${rows.length} events in range · ${pct(mobile, visitors)} of visitors on mobile · updated ${new Date().toLocaleTimeString()}`;
+    }
+
+    $("range").addEventListener("click", (e) => {
+      const b = e.target.closest("button");
+      if (!b) return;
+      days = Number(b.dataset.days);
+      $("range").querySelectorAll("button").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+      render();
+    });
+
+    load();
+  })();
+  </script>
+</body>
+</html>
