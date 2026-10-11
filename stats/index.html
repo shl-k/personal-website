@@ -215,7 +215,7 @@
       const rows = [];
       for (let from = 0; ; from += 1000) {
         const { data, error } = await sb.from(table)
-          .select("created_at, visitor_id, session_id, event, detail, seconds, device, referrer")
+          .select(table === "bible_events" ? "created_at, visitor_id, session_id, event, detail, seconds, device, referrer, email" : "created_at, visitor_id, session_id, event, detail, seconds, device, referrer")
           .order("created_at", { ascending: true }).range(from, from + 999);
         if (error) { $("foot").textContent = $("bFoot").textContent = `Couldn't load ${table}: ${error.message}`; break; }
         rows.push(...data);
@@ -290,7 +290,11 @@
       const rows = bibleEvents.filter((r) => new Date(r.created_at).getTime() >= since);
       const by = (ev) => rows.filter((r) => r.event === ev);
       const names = {};
-      bibleEvents.forEach((r) => { if ((r.event === "onboard_done" || r.event === "identify") && r.detail) names[r.visitor_id] = r.detail; });
+      const emails = {};
+      bibleEvents.forEach((r) => {
+        if ((r.event === "onboard_done" || r.event === "identify") && r.detail) names[r.visitor_id] = r.detail;
+        if (r.email) emails[r.visitor_id] = r.email;
+      });
 
       const readers = uniq(by("visit"));
       const sessions = new Set(by("visit").map((r) => r.session_id)).size;
@@ -298,10 +302,11 @@
       const leaves = by("leave").map((r) => r.seconds || 0).sort((a, b) => a - b);
       const median = leaves.length ? leaves[Math.floor(leaves.length / 2)] : 0;
       const namedReaders = new Set(rows.filter((r) => names[r.visitor_id]).map((r) => r.visitor_id)).size;
+      const signedIn = new Set(rows.filter((r) => r.email).map((r) => r.visitor_id)).size;
 
       $("bTiles").innerHTML = [
         ["Readers", readers, `${sessions} visits`],
-        ["Named", namedReaders, `${pct(namedReaders, readers)} entered a name`],
+        ["Named", namedReaders, `${pct(namedReaders, readers)} entered a name · ${signedIn} signed in`],
         ["Chapters opened", opens.length, `${new Set(opens.map((r) => r.detail)).size} different chapters`],
         ["Median time", fmtDur(median), `${leaves.length} timed visits`],
       ].map(([k, v, s]) => `<div class="tile"><div class="k">${k}</div><div class="v">${v}</div><div class="s">${s}</div></div>`).join("");
@@ -321,9 +326,9 @@
       const anon = list.length - named.length;
       $("bPeople").innerHTML = list.length ? `
         <table>
-          <tr><th>name</th><th>first seen</th><th>last seen</th><th class="n">visits</th><th class="n">chapters</th><th>last read</th><th class="n">time</th></tr>
+          <tr><th>name</th><th>email</th><th>first seen</th><th>last seen</th><th class="n">visits</th><th class="n">chapters</th><th>last read</th><th class="n">time</th></tr>
           ${named.map(([v, p]) => `<tr>
-            <td>${esc(names[v])}</td><td>${fmtWhen(p.first)}</td><td>${fmtWhen(p.last)}</td>
+            <td>${esc(names[v])}</td><td>${emails[v] ? esc(emails[v]) : '<span style="color:var(--muted)">not signed in</span>'}</td><td>${fmtWhen(p.first)}</td><td>${fmtWhen(p.last)}</td>
             <td class="n">${p.sessions.size}</td><td class="n">${p.chapters.size}</td>
             <td>${p.lastRef ? esc(refName(p.lastRef)) : "–"}</td><td class="n">${fmtDur(p.secs)}</td></tr>`).join("")}
         </table>

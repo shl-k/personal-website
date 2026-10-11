@@ -404,3 +404,4 @@ svg { display: block; }
 /* Reading-only mode (no AI companion reachable) */
 .app.no-ai .chat-toggle, .app.no-ai .chat-pane { display: none; }
 .gate-points li strong { color: #000; font-weight: bold; }
+.account-hint { margin: 8px 0 0; font-size: 11px; line-height: 1.5; color: #2f2f2f; }

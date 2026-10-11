@@ -128,3 +128,24 @@ create table if not exists public.ai_usage (
 create index if not exists ai_usage_created_at_idx on public.ai_usage (created_at);
 alter table public.ai_usage enable row level security;
 revoke all on public.ai_usage from anon, authenticated;
+
+-- ---------------------------------------------------------------------------
+-- Migration (Oct 2026): anyone may sign in. Each signed-in user syncs only
+-- their own Bible row; stats stay owner-only. Signed-in readers' emails are
+-- recorded on their bible_events (they're told when signing in).
+-- ---------------------------------------------------------------------------
+drop policy if exists "owner reads own bible state"   on public.bible_state;
+drop policy if exists "owner inserts own bible state" on public.bible_state;
+drop policy if exists "owner updates own bible state" on public.bible_state;
+drop policy if exists "users read own bible state"    on public.bible_state;
+drop policy if exists "users insert own bible state"  on public.bible_state;
+drop policy if exists "users update own bible state"  on public.bible_state;
+
+create policy "users read own bible state" on public.bible_state
+  for select to authenticated using (user_id = auth.uid());
+create policy "users insert own bible state" on public.bible_state
+  for insert to authenticated with check (user_id = auth.uid());
+create policy "users update own bible state" on public.bible_state
+  for update to authenticated using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+alter table public.bible_events add column if not exists email text check (char_length(email) <= 120);

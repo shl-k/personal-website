@@ -757,8 +757,7 @@ async function pullSync() {
 }
 
 function renderAccount() {
-  const owner = store.get("localAI", false) || !!user;
-  $("account").hidden = !sb || !owner;
+  $("account").hidden = !sb; // anyone can sign in to save their chats across devices
   $("accountOut").hidden = !!user;
   $("accountIn").hidden = !user;
   if (user) $("accountEmail").textContent = user.email;
@@ -767,7 +766,8 @@ function renderAccount() {
 $("signInBtn").addEventListener("click", () => {
   $("signInBtn").hidden = true;
   $("signInForm").hidden = false;
-  $("signInEmail").value = (SBC && SBC.owner) || "";
+  $("signInHint").hidden = false;
+  $("signInEmail").value = store.get("localAI", false) && SBC ? SBC.owner : "";
   $("signInEmail").focus();
 });
 $("signInForm").addEventListener("submit", async (e) => {
@@ -779,9 +779,9 @@ $("signInForm").addEventListener("submit", async (e) => {
 });
 $("signOutBtn").addEventListener("click", async () => {
   await sb.auth.signOut();
-  user = null;
-  renderAccount();
-  toast("Signed out. This device keeps its own copy.");
+  // Clear this browser's copy of the synced data so the next person on this device starts fresh.
+  ["messages", "recents", "ref", "localUpdatedAt", "chatOpen"].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
+  location.reload();
 });
 
 // ---------- Usage tracking → Supabase table bible_events ----------
@@ -790,7 +790,8 @@ $("signOutBtn").addEventListener("click", async () => {
 const VISITOR_KEY = "st_visitor_id";
 const SESSION_ID = crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2);
 const OPENED_AT = Date.now();
-const shouldTrack = () => !!SBC && !IS_LOCAL && !store.get("localAI", false);
+const isOwner = () => !!(user && SBC && user.email === SBC.owner);
+const shouldTrack = () => !!SBC && !IS_LOCAL && !store.get("localAI", false) && !isOwner();
 
 function visitorId() {
   try {
@@ -812,7 +813,7 @@ function track(event, detail = null, extra = {}) {
       visitor_id: visitorId(), session_id: SESSION_ID, event,
       detail: detail == null ? null : String(detail).slice(0, 40),
       device: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? "mobile" : "desktop",
-      referrer, ...extra,
+      referrer, email: user?.email ? String(user.email).slice(0, 120) : null, ...extra,
     }),
   }).catch(() => {});
 }
@@ -878,7 +879,7 @@ setInterval(tickClock, 1000);
     track("identify", name);
   }
   user = auth?.session?.user || null;
-  if (user && SBC && user.email !== SBC.owner) user = null; // only the owner syncs
+  if (user) track("identify", store.get("bible_name", "") || null); // links this reader's email to their name in /stats
   const hadHash = !!readHash();
   if (await pullSync()) textSize = clampSize(store.get("textSize", DEFAULT_SIZE));
   renderAccount();
