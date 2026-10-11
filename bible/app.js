@@ -320,9 +320,14 @@ $("bookList").addEventListener("click", (e) => {
   goTo(`${b.dataset.code}.1`);
 });
 
-// Display-only spacing fixes for a few typos in the source text (e.g. "Alvan,Manahath", "sonof" in
-// 1 Chronicles 1). Only adds missing spaces; never changes words.
-const SPACING_FIXES = [[/([,;])(?=[A-Za-z\u2018\u201C])/g, "$1 "], [/\bsonof\b/g, "son of"]];
+// Display-only fixes for a few typos in YouVersion's copy of the text: missing spaces ("Alvan,Manahath",
+// "sonof" in 1 Chronicles) and a stray "vvv" placeholder (Luke 9:33, Genesis 35:18). Never changes real words.
+const SPACING_FIXES = [
+  [/([,;])(?=[A-Za-z\u2018\u201C])/g, "$1 "],
+  [/\bsonof\b/g, "son of"],
+  [/\(\s*v{3,}\s+/g, "("],    // stray "vvv" placeholder in the source, e.g. Luke 9:33 "( vvv He did not know…"
+  [/\s+v{3,}(?=\s)/g, ""],      // …and Genesis 35:18 "she named vvv him"
+];
 function fixSpacing(root) {
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   for (let n = walker.nextNode(); n; n = walker.nextNode()) {
