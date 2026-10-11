@@ -21,14 +21,17 @@
         </button>
       </div>
       <nav class="nav">
-        <div class="book-card">
+        <button class="book-card" id="bookCard" aria-expanded="false" title="Choose a book">
           <div class="book-eyebrow">Now reading</div>
-          <div class="book-title" id="bookTitle">The Gospel of Luke</div>
-          <div class="book-sub" id="bookSub">Chapter 3 · WEB</div>
-        </div>
+          <div class="book-title"><span id="bookTitle">Luke</span><span class="book-chevron" aria-hidden="true">▾</span></div>
+          <div class="book-sub" id="bookSub"></div>
+        </button>
+        <div class="book-list" id="bookList" hidden></div>
 
-        <div class="nav-label">Chapters</div>
-        <div class="chapter-grid" id="chapterGrid"></div>
+        <div id="chapterSection">
+          <div class="nav-label">Chapters</div>
+          <div class="chapter-grid" id="chapterGrid"></div>
+        </div>
 
         <div class="nav-label">Recently read</div>
         <div class="recents" id="recents"></div>
@@ -147,6 +150,7 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="/supabase-config.js"></script>
   <script src="config.js"></script>
+  <script src="books.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

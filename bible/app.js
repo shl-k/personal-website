@@ -23,7 +23,9 @@ const CFG = window.BIBLE_CONFIG || {};
 const IS_LOCAL = ["localhost", "127.0.0.1"].includes(location.hostname) && location.port === "4317"; // served by the companion
 const AI_BASE = IS_LOCAL ? "" : "http://localhost:4317";
 const YV_IDS = { BSB: 3034 }; // YouVersion ids (bible.com/bible/<id>). NIV (111) skipped: its license bars AI use.
-const BOOKS = { LUK: { name: "Luke", chapters: 24 } };
+const BOOK_LIST = (window.BIBLE_BOOKS || []).map(([code, name, chapters, testament]) => ({ code, name, chapters, testament }));
+const BOOKS = Object.fromEntries(BOOK_LIST.map((b) => [b.code, b]));
+const WEB_BOOKS = new Set(["LUK"]); // the World English Bible is bundled for Luke only
 const yvMeta = {};
 let versions = ["WEB"];
 let aiOn = false;
@@ -42,7 +44,7 @@ function readHash() {
 }
 window.addEventListener("hashchange", () => {
   const r = readHash();
-  if (r && r !== ref) { ref = r; loadChapter(); }
+  if (r && r !== ref && BOOKS[r.split(".")[0]]) { ref = r; loadChapter(); }
 });
 function goTo(newRef, verse) {
   app.classList.remove("sidebar-open-mobile");
@@ -72,10 +74,19 @@ async function probeVersions() {
   return [...ok.filter(Boolean), "WEB"];
 }
 
+// Versions that can show a book (WEB is only bundled for Luke).
+const versionsFor = (bookCode) => versions.filter((v) => v !== "WEB" || WEB_BOOKS.has(bookCode));
+
 async function fetchChapter(r, v) {
   const [bookCode, n] = r.split(".");
   const book = BOOKS[bookCode];
-  const base = { ref: r, title: `${book.name} ${n}`, chapter: Number(n), chapters: book.chapters };
+  if (!book) throw new Error("Unknown book");
+  if (v === "WEB" && !WEB_BOOKS.has(bookCode)) {
+    if (!versions.includes("BSB")) throw new Error("only Luke is available offline; add a YouVersion key for the full Bible");
+    v = "BSB";
+  }
+  const title = `${bookCode === "PSA" ? "Psalm" : book.name} ${n}`; // "Psalm 23", like bible.com
+  const base = { ref: r, title, chapter: Number(n), chapters: book.chapters };
   if (v !== "WEB") {
     try {
       const p = await yv(`/bibles/${YV_IDS[v]}/passages/${r}?format=html&include_headings=true`);
@@ -85,6 +96,7 @@ async function fetchChapter(r, v) {
       if (!copy || /^public domain$/i.test(copy)) copy = `${name} (${v}). ${copy || "Used by permission"}`;
       return { ...base, version: v, versionName: name, html: String(p.content || ""), copyright: copy.replace(/\.?\s*$/, ".") + " Text provided by YouVersion." };
     } catch (err) {
+      if (!WEB_BOOKS.has(bookCode)) throw err;
       const web = await fetchChapter(r, "WEB");
       return { ...web, notice: `Couldn't load the ${v} (${err.message}). Showing the World English Bible instead.` };
     }
@@ -132,6 +144,33 @@ async function detectAi() {
   }
 }
 
+// Previous / next chapter, crossing into neighboring books.
+function stepRef(r, dir) {
+  const [code, n] = r.split(".");
+  const i = BOOK_LIST.findIndex((b) => b.code === code);
+  const c = Number(n) + dir;
+  if (c >= 1 && c <= BOOKS[code].chapters) return `${code}.${c}`;
+  const nb = BOOK_LIST[i + dir];
+  if (!nb) return null;
+  return `${nb.code}.${dir > 0 ? 1 : nb.chapters}`;
+}
+
+// "John 3:16", "jn 3", "1 cor 13:4", "ps 23", "4:16" (current book) → { ref, verse }
+function parseReference(text, currentBook) {
+  const m = text.trim().toLowerCase().match(/^([1-3]?\s*[a-z][a-z .]*?)?\.?\s*(\d{1,3})(?:\s*:\s*(\d{1,3}))?$/);
+  if (!m) return null;
+  let code = currentBook;
+  if (m[1]) {
+    const key = m[1].replace(/[\s.]/g, "");
+    code = (window.BIBLE_ALIASES || {})[key] || BOOK_LIST.find((b) => b.code.toLowerCase() === key)?.code ||
+      BOOK_LIST.find((b) => b.name.toLowerCase().replace(/\s/g, "").startsWith(key) && key.length >= 2)?.code;
+  }
+  const book = BOOKS[code];
+  const ch = Number(m[2]);
+  if (!book || ch < 1 || ch > book.chapters) return null;
+  return { ref: `${code}.${ch}`, verse: m[3] ? Number(m[3]) : undefined };
+}
+
 // ---------- Rendering the chapter ----------
 async function loadChapter(verse) {
   hidePop();
@@ -149,8 +188,8 @@ async function loadChapter(verse) {
   $("search").value = chapter.title;
   $("versionBtn").textContent = chapter.version;
   renderSidebar();
-  $("prevBtn").disabled = chapter.chapter <= 1;
-  $("nextBtn").disabled = chapter.chapter >= chapter.chapters;
+  $("prevBtn").disabled = !stepRef(ref, -1);
+  $("nextBtn").disabled = !stepRef(ref, 1);
 
   chapterEl.innerHTML =
     `<h1>${esc(chapter.title)}</h1>` +
@@ -169,15 +208,18 @@ async function loadChapter(verse) {
 
 // Sidebar: book card, chapter grid, recently read chapters.
 function renderSidebar() {
+  const code = ref.split(".")[0];
+  $("bookTitle").textContent = BOOKS[code].name;
   $("bookSub").textContent = `Chapter ${chapter.chapter} · ${chapter.versionName}`;
   const grid = $("chapterGrid");
-  if (grid.childElementCount !== chapter.chapters) {
+  if (grid.dataset.book !== code) {
+    grid.dataset.book = code;
     grid.innerHTML = "";
     for (let c = 1; c <= chapter.chapters; c++) {
       const b = document.createElement("button");
       b.textContent = c;
       b.dataset.c = c;
-      b.addEventListener("click", () => goTo(`LUK.${c}`));
+      b.addEventListener("click", () => goTo(`${code}.${c}`));
       grid.appendChild(b);
     }
   }
@@ -187,13 +229,39 @@ function renderSidebar() {
   store.set("recents", recents);
   $("recents").innerHTML = recents
     .map((r) => {
-      const c = r.split(".")[1];
+      const [bc, c] = r.split(".");
+      if (!BOOKS[bc]) return "";
       return `<button class="recent-item${r === chapter.ref ? " active" : ""}" data-ref="${r}">
-        <span class="recent-num">${c}</span><span>Luke ${c}</span></button>`;
+        <span class="recent-num">${c}</span><span>${esc(BOOKS[bc].name)} ${c}</span></button>`;
     })
     .join("");
   $("recents").querySelectorAll("button").forEach((b) => b.addEventListener("click", () => goTo(b.dataset.ref)));
 }
+
+// Book picker: tap the "Now reading" card to choose any of the 66 books.
+function renderBookList() {
+  const cur = ref.split(".")[0];
+  const section = (t, label) =>
+    `<div class="book-group">${label}</div><div class="book-names">` +
+    BOOK_LIST.filter((b) => b.testament === t)
+      .map((b) => `<button data-code="${b.code}" class="${b.code === cur ? "active" : ""}">${esc(b.name)}</button>`)
+      .join("") + "</div>";
+  $("bookList").innerHTML = section("OT", "Old Testament") + section("NT", "New Testament");
+}
+function toggleBookList(open = $("bookList").hidden) {
+  if (open) renderBookList();
+  $("bookList").hidden = !open;
+  $("chapterSection").hidden = open;
+  $("bookCard").setAttribute("aria-expanded", String(open));
+  if (open) $("bookList").querySelector(".active")?.scrollIntoView({ block: "center" });
+}
+$("bookCard").addEventListener("click", () => toggleBookList());
+$("bookList").addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-code]");
+  if (!b) return;
+  toggleBookList(false);
+  goTo(`${b.dataset.code}.1`);
+});
 
 // Wrap every run of scripture text in <span class="content" data-v="N">, tracking
 // the current verse from the verse-number labels, so selections map to verses.
@@ -449,22 +517,32 @@ function goToVerse(n, flash = [n]) {
 }
 chatLog.addEventListener("click", (e) => {
   const x = e.target.closest(".xref");
-  if (x) goTo(`LUK.${x.dataset.c}`, Number(x.dataset.v));
+  if (x) goTo(x.dataset.ref, Number(x.dataset.v));
 });
 
 // ---------- Minimal, safe markdown ----------
 function esc(s) {
   return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
+const NAME_TO_CODE = Object.fromEntries(BOOK_LIST.map((b) => [b.name.toLowerCase(), b.code]));
+NAME_TO_CODE["psalm"] = "PSA";
+NAME_TO_CODE["song of solomon"] = "SNG";
+const XREF_RE = new RegExp(
+  `\\b(${Object.keys(NAME_TO_CODE).sort((a, b) => b.length - a.length).map((n) => n.replace(/ /g, "\\s+")).join("|")})\\s+(\\d{1,3}):(\\d{1,3})(?:[–-]\\d+)?`,
+  "gi"
+);
+
 function inline(s) {
   s = esc(s)
     .replace(/`([^`]+)`/g, "<code>$1</code>")
     .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
     .replace(/(^|[^*])\*([^*\s][^*]*)\*/g, "$1<em>$2</em>");
-  // References into Luke are clickable (e.g. "Luke 4:18" or "Luke 4:18–19").
-  return s.replace(/\b(Luke\s+(\d{1,2}):(\d{1,3})(?:[–-]\d+)?)/g, (m, full, c, v) =>
-    Number(c) >= 1 && Number(c) <= 24 ? `<span class="xref" data-c="${c}" data-v="${v}">${full}</span>` : full
-  );
+  // Bible references are clickable (e.g. "Luke 4:18", "1 Corinthians 13:4–7", "Psalm 23:1").
+  return s.replace(XREF_RE, (full, name, c, v) => {
+    const code = NAME_TO_CODE[name.toLowerCase().replace(/\s+/g, " ")];
+    if (!code || Number(c) > BOOKS[code].chapters) return full;
+    return `<span class="xref" data-ref="${code}.${c}" data-v="${v}">${full}</span>`;
+  });
 }
 function md(src) {
   const out = [];
@@ -503,7 +581,7 @@ $("fontBtn").addEventListener("click", () => {
 });
 
 $("versionBtn").addEventListener("click", () => {
-  const vs = versions;
+  const vs = versionsFor(ref.split(".")[0]);
   if (vs.length < 2) return toast("Only one version is available");
   version = vs[(vs.indexOf(version) + 1) % vs.length];
   toast(version);
@@ -516,22 +594,22 @@ $("expandBtn").addEventListener("click", () => {
   if (innerWidth <= 760) app.classList.toggle("sidebar-open-mobile");
   else app.classList.remove("sidebar-collapsed");
 });
-$("prevBtn").addEventListener("click", () => chapter && goTo(`LUK.${chapter.chapter - 1}`));
-$("nextBtn").addEventListener("click", () => chapter && goTo(`LUK.${chapter.chapter + 1}`));
+$("prevBtn").addEventListener("click", () => { const r = stepRef(ref, -1); if (r) goTo(r); });
+$("nextBtn").addEventListener("click", () => { const r = stepRef(ref, 1); if (r) goTo(r); });
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") hidePop();
   if (e.target.closest("input, textarea") || !chapter) return;
-  if (e.key === "ArrowLeft" && chapter.chapter > 1) goTo(`LUK.${chapter.chapter - 1}`);
-  if (e.key === "ArrowRight" && chapter.chapter < chapter.chapters) goTo(`LUK.${chapter.chapter + 1}`);
+  if (e.key === "ArrowLeft" && stepRef(ref, -1)) goTo(stepRef(ref, -1));
+  if (e.key === "ArrowRight" && stepRef(ref, 1)) goTo(stepRef(ref, 1));
 });
 
-// Search: "Luke 4", "4", "4:16", "luke 5:12"
+// Search: "John 3:16", "ps 23", "1 cor 13", or "4:16" in the current book
 $("search").addEventListener("keydown", (e) => {
   if (e.key !== "Enter") return;
-  const m = e.target.value.trim().match(/^(?:luke|luk|lk)?\.?\s*(\d{1,2})(?:\s*:\s*(\d{1,3}))?$/i);
-  if (!m || Number(m[1]) < 1 || Number(m[1]) > 24) return toast("Try “Luke 4” or “4:16”");
+  const hit = parseReference(e.target.value, ref.split(".")[0]);
+  if (!hit) return toast("Try “John 3:16”, “Psalm 23”, or “4:16”");
   e.target.blur();
-  goTo(`LUK.${Number(m[1])}`, m[2] ? Number(m[2]) : undefined);
+  goTo(hit.ref, hit.verse);
 });
 $("search").addEventListener("focus", (e) => e.target.select());
 
@@ -632,6 +710,7 @@ $("signOutBtn").addEventListener("click", async () => {
   const saved = store.get("version", null);
   version = versions.includes(saved) ? saved : versions[0];
   ref = (hadHash && readHash()) || store.get("ref", "LUK.3");
+  { const [c, n] = ref.split("."); if (!BOOKS[c] || Number(n) < 1 || Number(n) > BOOKS[c].chapters) ref = "LUK.3"; }
   history.replaceState(null, "", "#" + ref);
   messages = store.get("messages", []).filter((m) => m.role !== "assistant" || m.content);
   renderLog();

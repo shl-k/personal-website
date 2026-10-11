@@ -61,12 +61,27 @@ svg { display: block; }
 .nav { display: flex; flex-direction: column; padding: 4px 16px 16px; flex: 1; overflow-y: auto; }
 
 .book-card {
+  display: block; width: 100%; text-align: left; cursor: pointer; color: inherit; font: inherit;
   padding: 16px 16px 15px; border-radius: 14px;
   background: linear-gradient(160deg, #1b1b1b 0%, #111 100%);
   border: 1px solid #222;
 }
 .book-eyebrow { font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--discussed); }
 .book-title { font: 600 19px/1.25 var(--serif); margin-top: 6px; color: #fff; }
+.book-card:hover { border-color: #333; }
+.book-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.book-chevron { font: 12px var(--ui); color: var(--text-muted); transition: transform .2s; }
+.book-card[aria-expanded="true"] .book-chevron { transform: rotate(180deg); }
+.book-list { margin-top: 10px; }
+.book-list[hidden], #chapterSection[hidden] { display: none; }
+.book-group { font-size: 10.5px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: var(--text-faint); padding: 14px 4px 6px; }
+.book-names { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+.book-names button {
+  text-align: left; padding: 6px 8px; border: 0; border-radius: 8px; background: transparent;
+  font: 13px var(--ui); color: #cfcfcf; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.book-names button:hover { background: #1a1a1a; color: #fff; }
+.book-names button.active { background: #fff; color: #000; font-weight: 600; }
 .book-sub { font-size: 12.5px; color: var(--text-muted); margin-top: 4px; }
 
 .nav-label {
