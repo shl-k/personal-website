@@ -196,6 +196,7 @@ async function loadChapter(verse) {
     (chapter.notice ? `<p class="notice">${esc(chapter.notice)}</p>` : "") +
     chapter.html;
   tagVerses();
+  track("chapter_open", ref);
   $("copyright").textContent = chapter.copyright;
   markDiscussed();
 
@@ -695,9 +696,92 @@ $("signOutBtn").addEventListener("click", async () => {
   toast("Signed out. This device keeps its own copy.");
 });
 
+// ---------- Usage tracking → Supabase table bible_events ----------
+// A random visitor id (shared with /course) plus the first name from the gate.
+// Not recorded on the owner's own devices (?me) or the local companion page.
+const VISITOR_KEY = "st_visitor_id";
+const SESSION_ID = crypto.randomUUID ? crypto.randomUUID() : String(Math.random()).slice(2);
+const OPENED_AT = Date.now();
+const shouldTrack = () => !!SBC && !IS_LOCAL && !store.get("localAI", false);
+
+function visitorId() {
+  try {
+    let id = localStorage.getItem(VISITOR_KEY);
+    if (!id) { id = crypto.randomUUID(); localStorage.setItem(VISITOR_KEY, id); }
+    return id;
+  } catch { return SESSION_ID; }
+}
+
+function track(event, detail = null, extra = {}) {
+  if (!shouldTrack()) return;
+  let referrer = null;
+  try { const r = document.referrer && new URL(document.referrer); if (r && r.host !== location.host) referrer = r.host.slice(0, 200); } catch {}
+  fetch(`${SBC.url}/rest/v1/bible_events`, {
+    method: "POST",
+    keepalive: true,
+    headers: { apikey: SBC.anonKey, "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify({
+      visitor_id: visitorId(), session_id: SESSION_ID, event,
+      detail: detail == null ? null : String(detail).slice(0, 40),
+      device: /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent) ? "mobile" : "desktop",
+      referrer, ...extra,
+    }),
+  }).catch(() => {});
+}
+
+let leftReported = false;
+function reportLeave() {
+  if (leftReported) return;
+  leftReported = true;
+  track("leave", null, { seconds: Math.min(86400, Math.round((Date.now() - OPENED_AT) / 1000)) });
+}
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "hidden") reportLeave(); else leftReported = false;
+});
+window.addEventListener("pagehide", reportLeave);
+
+// ---------- Name gate ----------
+function askForName() {
+  return new Promise((resolve) => {
+    $("gate").hidden = false;
+    app.hidden = true;
+    $("gateName").focus();
+    $("gateForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = $("gateName").value.trim().slice(0, 40);
+      if (!name) return;
+      store.set("bible_name", name);
+      $("gate").hidden = true;
+      app.hidden = false;
+      resolve(name);
+    });
+  });
+}
+
+// ---------- Title-bar clock (same format as the homepage) ----------
+function tickClock() {
+  const d = new Date();
+  const h = d.getHours(), m = String(d.getMinutes()).padStart(2, "0");
+  $("clock").textContent = `${h % 12 || 12}:${m}${h >= 12 ? "PM" : "AM"} - ${d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}`;
+}
+tickClock();
+setInterval(tickClock, 1000);
+
 // ---------- Boot ----------
 (async function init() {
   const { data: auth } = await authReady; // before touching the URL hash
+  // ?me / ?notme are read here too, so the owner's devices are never tracked
+  const params = new URLSearchParams(location.search);
+  if (params.has("me")) store.set("localAI", true);
+  if (params.has("notme")) store.set("localAI", false);
+  track("visit");
+  let name = store.get("bible_name", "");
+  if (!name && !IS_LOCAL) {
+    name = await askForName();
+    track("onboard_done", name);
+  } else if (name) {
+    track("identify", name);
+  }
   user = auth?.session?.user || null;
   if (user && SBC && user.email !== SBC.owner) user = null; // only the owner syncs
   const hadHash = !!readHash();

@@ -77,3 +77,37 @@ alter table public.course_events drop constraint if exists course_events_event_c
 alter table public.course_events add constraint course_events_event_check check (event in (
   'visit', 'gate_view', 'password_attempt', 'unlock',
   'onboard_done', 'identify', 'week_open', 'week_complete', 'leave'));
+
+-- ---------------------------------------------------------------------------
+-- Bible reader: usage events (insert-only for visitors, owner reads)
+-- ---------------------------------------------------------------------------
+create table if not exists public.bible_events (
+  id          bigint generated always as identity primary key,
+  created_at  timestamptz not null default now(),
+  visitor_id  uuid not null,                -- shared with course_events (same browser id)
+  session_id  text not null check (char_length(session_id) <= 40),
+  event       text not null check (event in ('visit', 'onboard_done', 'identify', 'chapter_open', 'leave')),
+  detail      text check (char_length(detail) <= 40),   -- first name, or a chapter ref like 'JHN.3'
+  seconds     integer check (seconds between 0 and 86400),
+  device      text check (device in ('mobile', 'desktop')),
+  referrer    text check (char_length(referrer) <= 200)
+);
+
+create index if not exists bible_events_created_at_idx on public.bible_events (created_at);
+
+alter table public.bible_events enable row level security;
+
+drop policy if exists "anyone can log a bible event" on public.bible_events;
+drop policy if exists "owner reads bible events"     on public.bible_events;
+
+create policy "anyone can log a bible event" on public.bible_events
+  for insert to anon, authenticated
+  with check (true);
+
+create policy "owner reads bible events" on public.bible_events
+  for select to authenticated
+  using ((auth.jwt() ->> 'email') = 'shlokdhavalpatel@gmail.com');
+
+revoke all on public.bible_events from anon, authenticated;
+grant insert on public.bible_events to anon, authenticated;
+grant select on public.bible_events to authenticated;
