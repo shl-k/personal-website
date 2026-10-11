@@ -272,6 +272,11 @@ function toggleBookList(open = $("bookList").hidden) {
   if (open) $("bookList").querySelector(".active")?.scrollIntoView({ block: "center" });
 }
 $("bookCard").addEventListener("click", () => toggleBookList());
+// The book icon in the top bar opens the same picker (showing the sidebar if it's collapsed).
+$("booksBtn").addEventListener("click", () => {
+  app.classList.remove("sidebar-collapsed");
+  toggleBookList(true);
+});
 $("bookList").addEventListener("click", (e) => {
   const b = e.target.closest("button[data-code]");
   if (!b) return;

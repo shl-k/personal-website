@@ -387,7 +387,7 @@ svg { display: block; }
   .topbar .expand-btn { display: grid; }
   .topbar { padding: 8px 10px; gap: 6px; }
   .search { width: auto; flex: 1; }
-  .topbar-spacer, .circle-btn[title="Audio"], .circle-btn[title="Parallel"], .circle-btn[title="Bible book list"] { display: none; }
+  .topbar-spacer, #booksBtn { display: none; }
   .reader-pane { border: 0; }
   .reader-scroll, .app.chat-open .reader-scroll { padding: 0 16px 100px; }
   .scripture h1 { font-size: 24px; margin: 28px 0; }
