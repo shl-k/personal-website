@@ -289,20 +289,12 @@ body {
 }
 
 /* Tooltip container for external links */
-.desktop-link[href*="calendly"],
-.desktop-link[href*="linkedin"],
-.desktop-link[href*="paragonpatents"],
-.desktop-link[href*="psv.vc"],
-.desktop-link[href*="/course"] {
+.desktop-link[data-tooltip] {
     position: relative;  /* For positioning tooltips */
 }
 
 /* Tooltip styling */
-.desktop-link[href*="calendly"]::after,
-.desktop-link[href*="linkedin"]::after,
-.desktop-link[href*="paragonpatents"]::after,
-.desktop-link[href*="psv.vc"]::after,
-.desktop-link[href*="/course"]::after {
+.desktop-link[data-tooltip]::after {
     content: attr(data-tooltip);  /* Get tooltip text from data attribute */
     position: absolute;  /* Position absolutely */
     top: 50%;  /* Center vertically with the icon */
@@ -326,11 +318,7 @@ body {
 }
 
 /* Show tooltip on hover */
-.desktop-link[href*="calendly"]:hover::after,
-.desktop-link[href*="linkedin"]:hover::after,
-.desktop-link[href*="paragonpatents"]:hover::after,
-.desktop-link[href*="psv.vc"]:hover::after,
-.desktop-link[href*="/course"]:hover::after {
+.desktop-link[data-tooltip]:hover::after {
     opacity: 1;  /* Make visible */
     visibility: visible;  /* Show tooltip */
 }
