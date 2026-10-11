@@ -694,7 +694,7 @@ $("whatBtn").addEventListener("click", () => {
   hidePop();
   window.getSelection().removeAllRanges();
   openChat();
-  send({ content: "What is this?", quote: s.text, ref: s.ref, chapterRef: s.verses.length ? ref : null, verses: s.verses });
+  send({ content: "Please explain this", quote: s.text, ref: s.ref, chapterRef: s.verses.length ? ref : null, verses: s.verses });
 });
 
 $("simpleBtn").addEventListener("click", () => {
@@ -802,7 +802,7 @@ $("composer").addEventListener("submit", (e) => {
   const content = input.value.trim();
   if (!content && !composerSel) return;
   const s = composerSel;
-  send({ content: content || "What is this?", quote: s?.text, ref: s?.ref, chapterRef: s?.chapterRef, verses: s?.verses || [] });
+  send({ content: content || "Please explain this", quote: s?.text, ref: s?.ref, chapterRef: s?.chapterRef, verses: s?.verses || [] });
   input.value = "";
   autosize();
   setComposerSel(null);
@@ -973,7 +973,7 @@ function stripMd(t) {
 function saveToNote(target, text, question) {
   const anchor = anchorOf(target.verses[0], target.r);
   const existing = annotationFor(anchor, target.r).note || "";
-  const header = question?.content && question.content !== "What is this?" ? `Q: ${question.content}\n` : "";
+  const header = question?.content && !["Please explain this", "What is this?"].includes(question.content) ? `Q: ${question.content}\n` : "";
   const entry = header + text;
   const note = (existing ? existing + "\n\n— " : "") + entry;
   const keys = existing ? noteKeys(anchor, target.r) : target.verses;
