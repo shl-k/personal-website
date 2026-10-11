@@ -1130,9 +1130,59 @@ $("expandBtn").addEventListener("click", () => {
 });
 $("prevBtn").addEventListener("click", () => { const r = stepRef(ref, -1); if (r) goTo(r); });
 $("nextBtn").addEventListener("click", () => { const r = stepRef(ref, 1); if (r) goTo(r); });
+// ---------- Keyboard shortcuts ----------
+// ⌘B / Ctrl+B: sidebar · ⌘I / Ctrl+I: AI chat · ↓/↑: scroll a little · ←/→: chapters · Esc: close popups
+const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+const MOD = IS_MAC ? "⌘" : "Ctrl+";
+function toggleSidebar() {
+  if (innerWidth <= 760) app.classList.toggle("sidebar-open-mobile");
+  else app.classList.toggle("sidebar-collapsed");
+}
+function toggleChat() {
+  if (app.classList.contains("chat-open")) closeChat();
+  else if (aiOn) { openChat(); input.focus(); }
+}
+// Hover tooltips that include the shortcut (shown instantly, unlike the browser's built-in ones)
+document.querySelectorAll("[data-tip]").forEach((b) => {
+  b.dataset.tipText = b.dataset.keys ? `${b.dataset.tip}  ${MOD}${b.dataset.keys}` : b.dataset.tip;
+});
+// Our own easing (the panel's CSS smooth-scroll would cancel itself on rapid presses).
+// Time-based: each frame sets an exact position between where the glide started and the target.
+let arrowScroll = { target: 0, from: 0, t0: 0, animating: false };
+const ARROW_MS = 170;
+function animateArrowScroll(sc) {
+  arrowScroll.from = sc.scrollTop;
+  arrowScroll.t0 = performance.now();
+  if (arrowScroll.animating) return; // the running loop picks up the new target
+  arrowScroll.animating = true;
+  sc.style.scrollBehavior = "auto";
+  const tick = (now) => {
+    const p = Math.min(1, (now - arrowScroll.t0) / ARROW_MS);
+    const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+    sc.scrollTop = Math.round(arrowScroll.from + (arrowScroll.target - arrowScroll.from) * eased);
+    if (p < 1) return requestAnimationFrame(tick);
+    arrowScroll.animating = false;
+    sc.style.scrollBehavior = "";
+  };
+  requestAnimationFrame(tick);
+}
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") { hidePop(); toggleSizePop(false); closeNote(); }
-  if (e.target.closest("input, textarea") || !chapter) return;
+  const mod = IS_MAC ? e.metaKey : e.ctrlKey;
+  if (mod && !e.shiftKey && !e.altKey && (e.key === "b" || e.key === "B")) { e.preventDefault(); toggleSidebar(); return; }
+  if (mod && !e.shiftKey && !e.altKey && (e.key === "i" || e.key === "I")) { e.preventDefault(); toggleChat(); return; }
+  if (e.target.closest?.("input, textarea, select, [contenteditable]") || !chapter || !$("gate").hidden) return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    e.preventDefault();
+    // ~3 lines per press; quick repeated presses (or holding the key) add up instead of cancelling
+    const sc = $("readerScroll");
+    const step = (e.key === "ArrowDown" ? 1 : -1) * Math.round(textSize * 1.75 * 3);
+    const base = arrowScroll.animating ? arrowScroll.target : sc.scrollTop;
+    arrowScroll.target = Math.max(0, Math.min(sc.scrollHeight - sc.clientHeight, base + step));
+    animateArrowScroll(sc);
+    return;
+  }
   if (e.key === "ArrowLeft" && stepRef(ref, -1)) goTo(stepRef(ref, -1));
   if (e.key === "ArrowRight" && stepRef(ref, 1)) goTo(stepRef(ref, 1));
 });

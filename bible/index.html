@@ -70,7 +70,7 @@
     <aside class="sidebar" id="sidebar">
       <div class="brand">
         <a class="brand-home" id="brandHome" href="/" title="Home"><img class="brand-icon" src="icon.png" alt="" width="30" height="30" /><span class="brand-name">Holy Bible</span></a>
-        <button class="icon-btn collapse-btn" id="collapseBtn" title="Collapse sidebar" aria-label="Collapse sidebar">
+        <button class="icon-btn collapse-btn" id="collapseBtn" data-tip="Hide sidebar" data-keys="B" data-tip-align="right" aria-label="Hide sidebar">
           <svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="m15 18-6-6 6-6"/></svg>
         </button>
       </div>
@@ -120,7 +120,7 @@
     <div class="main" id="main">
       <section class="reader-pane" id="readerPane">
         <header class="topbar">
-          <button class="icon-btn expand-btn" id="expandBtn" title="Show sidebar" aria-label="Show sidebar">
+          <button class="icon-btn expand-btn" id="expandBtn" data-tip="Show sidebar" data-keys="B" aria-label="Show sidebar">
             <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16"/></svg>
           </button>
           <label class="search">
@@ -144,7 +144,7 @@
               <button type="button" class="size-reset" id="sizeReset">reset</button>
             </div>
           </div>
-          <button class="chat-toggle" id="chatToggle" title="Open study chat">
+          <button class="chat-toggle" id="chatToggle" data-tip="Open AI chat" data-keys="I" data-tip-align="right">
             <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M4 5h16v11H9l-5 4z"/></svg>
             <span>Ask</span>
           </button>
@@ -181,7 +181,7 @@
             <button class="icon-btn" id="newChatBtn" title="New chat (this one is saved to history)" aria-label="New chat">
               <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M12 5v14M5 12h14"/></svg>
             </button>
-            <button class="icon-btn" id="closeChatBtn" title="Close" aria-label="Close chat">
+            <button class="icon-btn" id="closeChatBtn" data-tip="Close AI chat" data-keys="I" data-tip-align="right" aria-label="Close AI chat">
               <svg viewBox="0 0 24 24" width="16" height="16"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg>
             </button>
           </div>
