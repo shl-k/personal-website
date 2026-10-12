@@ -1318,28 +1318,16 @@ let syncTimer = null;
 function scheduleSync() {
   if (!user) return;
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(pushSync, 1200);
+  syncTimer = setTimeout(() => syncNow().then((pulled) => pulled && applySynced()), 1200);
 }
 
-async function pushSync() {
-  if (!user) return;
-  const { error } = await sb.from("bible_state").upsert({
-    user_id: user.id,
-    state: { ref: store.get("ref", ref), version: store.get("version", version), textSize: store.get("textSize", DEFAULT_SIZE), name: store.get("bible_name", ""), annotations: store.get("annotations", {}), chatHistory: store.get("chatHistory", []), chatTitle: store.get("chatTitle", ""), recents: store.get("recents", []) },
-    messages: store.get("messages", []),
-    updated_at: new Date(Number(store.get("localUpdatedAt", Date.now()))).toISOString(),
-  });
-  if (error) console.warn("Sync failed:", error.message);
-}
+const localState = () => ({
+  ref: store.get("ref", ref), version: store.get("version", version), textSize: store.get("textSize", DEFAULT_SIZE),
+  name: store.get("bible_name", ""), annotations: store.get("annotations", {}), chatHistory: store.get("chatHistory", []),
+  chatTitle: store.get("chatTitle", ""), recents: store.get("recents", []),
+});
 
-// Newer side wins: pull the cloud copy if it's newer than this browser's, otherwise push ours.
-async function pullSync() {
-  if (!user) return false;
-  const { data, error } = await sb.from("bible_state").select("state, messages, updated_at").eq("user_id", user.id).maybeSingle();
-  if (error) { console.warn("Sync failed:", error.message); return false; }
-  const localAt = Number(store.get("localUpdatedAt", 0));
-  if (!data || new Date(data.updated_at).getTime() <= localAt) { await pushSync(); return false; }
-  const st = data.state || {};
+function writeLocal(st, msgs) {
   try {
     if (st.ref) localStorage.setItem("ref", JSON.stringify(st.ref));
     if (st.version) localStorage.setItem("version", JSON.stringify(st.version));
@@ -1349,11 +1337,90 @@ async function pullSync() {
     if (Array.isArray(st.chatHistory)) localStorage.setItem("chatHistory", JSON.stringify(st.chatHistory));
     if (typeof st.chatTitle === "string") localStorage.setItem("chatTitle", JSON.stringify(st.chatTitle.slice(0, 80)));
     if (st.recents) localStorage.setItem("recents", JSON.stringify(st.recents));
-    localStorage.setItem("messages", JSON.stringify(data.messages || []));
-    localStorage.setItem("localUpdatedAt", String(new Date(data.updated_at).getTime()));
+    localStorage.setItem("messages", JSON.stringify(msgs || []));
   } catch {}
-  return true;
 }
+
+// Both this browser and the cloud changed since they last agreed (e.g. phone and laptop both used):
+// keep everything. Notes and highlights are combined, past chats are combined, and if the open
+// chats differ, this browser's one is filed into chat history instead of being thrown away.
+function mergeStates(cloudSt, cloudMsgs, mine, myMsgs) {
+  const annotations = { ...(cloudSt.annotations || {}) };
+  for (const [r, marks] of Object.entries(mine.annotations || {})) annotations[r] = { ...(annotations[r] || {}), ...marks };
+  const byId = new Map();
+  [...(cloudSt.chatHistory || []), ...(mine.chatHistory || [])].forEach((h) => h && byId.set(h.id, h));
+  let chatHistory = [...byId.values()].sort((a, b) => b.id - a.id);
+  const a = JSON.stringify(cloudMsgs || []), b = JSON.stringify(myMsgs || []);
+  let msgs = cloudMsgs || [];
+  if (b.length > 2 && a !== b) {
+    if (b.startsWith(a.slice(0, -1))) msgs = myMsgs; // this browser just carried on the same chat
+    else if (!a.startsWith(b.slice(0, -1)) && myMsgs.some((m) => m.role === "assistant" && m.content)) {
+      const firstQ = myMsgs.find((m) => m.role === "user") || {};
+      const title = mine.chatTitle || (firstQ.quote ? `“${firstQ.quote}”` : firstQ.content || "Chat").slice(0, 80);
+      chatHistory.unshift({ id: Date.now(), at: new Date().toISOString(), title, named: !!mine.chatTitle, ref: firstQ.ref || firstQ.chapterRef || "", messages: myMsgs });
+    }
+  }
+  chatHistory = chatHistory.slice(0, 50);
+  return { st: { ...cloudSt, ...mine, annotations, chatHistory, chatTitle: msgs === myMsgs ? mine.chatTitle : cloudSt.chatTitle || "" }, msgs };
+}
+
+// Compares this browser with the cloud copy. "cloudSeenAt" is the cloud version this browser last matched,
+// so we can tell who changed: only the cloud → take it; only us → send ours; both → merge, then send.
+// Returns true when this browser's data changed (the page should re-render).
+let syncing = null;
+function syncNow() {
+  if (!user) return Promise.resolve(false);
+  if (syncing) return syncing.then(() => syncNow());
+  syncing = (async () => {
+    const { data, error } = await sb.from("bible_state").select("state, messages, updated_at").eq("user_id", user.id).maybeSingle();
+    if (error) { console.warn("Sync failed:", error.message); return false; }
+    const seen = Number(store.get("cloudSeenAt", 0));
+    const cloudAt = data ? new Date(data.updated_at).getTime() : 0;
+    const localDirty = Number(store.get("localUpdatedAt", 0)) > seen;
+    const cloudChanged = cloudAt > seen;
+    if (!cloudChanged && !localDirty) return false;
+    let pulled = false, st = localState(), msgs = store.get("messages", []);
+    if (cloudChanged) {
+      if (localDirty) ({ st, msgs } = mergeStates(data.state || {}, data.messages, st, msgs));
+      else { st = data.state || {}; msgs = data.messages || []; }
+      writeLocal(st, msgs);
+      pulled = true;
+      if (!localDirty) { localStorage.setItem("cloudSeenAt", String(cloudAt)); localStorage.setItem("localUpdatedAt", String(cloudAt)); return true; }
+    }
+    const now = Date.now();
+    const { error: upErr } = await sb.from("bible_state").upsert({ user_id: user.id, state: localState(), messages: store.get("messages", []), updated_at: new Date(now).toISOString() });
+    if (upErr) { console.warn("Sync failed:", upErr.message); return pulled; }
+    localStorage.setItem("cloudSeenAt", String(now));
+    if (Number(store.get("localUpdatedAt", 0)) <= now) localStorage.setItem("localUpdatedAt", String(now));
+    return pulled;
+  })().finally(() => { syncing = null; });
+  return syncing;
+}
+
+// After pulling from another device: show its chats, notes and place without a reload.
+let booted = false;
+async function applySynced() {
+  if (!booted) return;
+  textSize = clampSize(store.get("textSize", DEFAULT_SIZE));
+  applySize();
+  if (!busy) {
+    messages = store.get("messages", []).filter((m) => m.role !== "assistant" || m.content);
+    renderLog();
+  }
+  if (!$("chatHistory").hidden) renderHistory();
+  renderMarksList();
+  const cloudRef = store.get("ref", ref);
+  if (cloudRef !== ref && BOOKS[cloudRef.split(".")[0]]) { ref = cloudRef; history.replaceState(null, "", "#" + ref); await loadChapter(); }
+  else { renderAnnotations(); markDiscussed(); }
+}
+
+// Pick up what was done on another device when coming back to this tab, and every minute while it's open.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible") syncNow().then((pulled) => pulled && applySynced());
+});
+setInterval(() => {
+  if (document.visibilityState === "visible") syncNow().then((pulled) => pulled && applySynced());
+}, 60000);
 
 function renderAccount() {
   $("account").hidden = !sb; // anyone can sign in to save their chats across devices
@@ -1379,7 +1446,7 @@ $("signInForm").addEventListener("submit", async (e) => {
 $("signOutBtn").addEventListener("click", async () => {
   await sb.auth.signOut();
   // Clear this browser's copy of the synced data so the next person on this device starts fresh.
-  ["messages", "recents", "ref", "localUpdatedAt", "chatOpen", "annotations", "chatHistory", "chatTitle"].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
+  ["messages", "recents", "ref", "localUpdatedAt", "chatOpen", "annotations", "chatHistory", "chatTitle", "cloudSeenAt"].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
   location.reload();
 });
 
@@ -1518,7 +1585,7 @@ setInterval(tickClock, 1000);
   user = auth?.session?.user || null;
   track("visit");
   // Signed-in readers bring their name (and chats) from their account, so only ask if it's still unknown.
-  if (await pullSync()) textSize = clampSize(store.get("textSize", DEFAULT_SIZE));
+  if (await syncNow()) textSize = clampSize(store.get("textSize", DEFAULT_SIZE));
   let name = store.get("bible_name", "") || String(user?.user_metadata?.name || "").slice(0, 40);
   if (name && !store.get("bible_name", "")) store.set("bible_name", name); // name given when the account was created
   if (!name && !IS_LOCAL) {
@@ -1546,5 +1613,6 @@ setInterval(tickClock, 1000);
   await loadChapter();
   if (firstVisit && ref === START_REF) scrollToSectionOf(START_VERSE);
   if (aiOn && store.get("chatOpen", false) && messages.length) openChat();
+  booted = true;
   if (user) toast("Synced");
 })();
