@@ -1135,6 +1135,49 @@ $("expandBtn").addEventListener("click", () => {
 });
 $("prevBtn").addEventListener("click", () => { const r = stepRef(ref, -1); if (r) goTo(r); });
 $("nextBtn").addEventListener("click", () => { const r = stepRef(ref, 1); if (r) goTo(r); });
+// ---------- Resizable sidebar and chat ----------
+// Drag the handle on the sidebar's right edge or the chat's left edge; double-click resets.
+// Widths are remembered in this browser (they're about this screen, so they don't sync).
+const SIZES_DEFAULT = { sidebar: 236, chat: 400 };
+function clampWidths(side, chat) {
+  // Window padding, borders and the gaps between panels take ~84px; always leave 420px for the reading page.
+  const room = Math.max(320, innerWidth - 84 - 420);
+  side = Math.round(Math.min(Math.max(side, 180), 420));
+  chat = Math.round(Math.min(Math.max(chat, 300), Math.max(300, room - (app.classList.contains("sidebar-collapsed") ? 0 : side))));
+  return { side, chat };
+}
+function applyWidths(save = false) {
+  const { side, chat } = clampWidths(store.get("sidebarW", SIZES_DEFAULT.sidebar), store.get("chatW", SIZES_DEFAULT.chat));
+  document.documentElement.style.setProperty("--sidebar-w", side + "px");
+  document.documentElement.style.setProperty("--chat-width", chat + "px");
+  if (save) { store.set("sidebarW", side); store.set("chatW", chat); }
+}
+function makeResizer(handle, key, widthFromPointer) {
+  handle.addEventListener("pointerdown", (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    try { handle.setPointerCapture(e.pointerId); } catch {}
+    handle.classList.add("active");
+    app.classList.add("resizing");
+    const move = (ev) => { store.set(key, widthFromPointer(ev.clientX)); applyWidths(); };
+    const up = () => {
+      try { handle.releasePointerCapture(e.pointerId); } catch {}
+      handle.classList.remove("active");
+      app.classList.remove("resizing");
+      handle.removeEventListener("pointermove", move);
+      handle.removeEventListener("pointerup", up);
+      applyWidths(true);
+    };
+    handle.addEventListener("pointermove", move);
+    handle.addEventListener("pointerup", up);
+  });
+  handle.addEventListener("dblclick", () => { store.set(key, key === "sidebarW" ? SIZES_DEFAULT.sidebar : SIZES_DEFAULT.chat); applyWidths(true); });
+}
+makeResizer($("sidebarResizer"), "sidebarW", (x) => x - $("sidebar").getBoundingClientRect().left);
+makeResizer($("chatResizer"), "chatW", (x) => $("chatPane").getBoundingClientRect().right - x);
+applyWidths();
+addEventListener("resize", () => applyWidths());
+
 // ---------- Keyboard shortcuts ----------
 // ⌘B / Ctrl+B: sidebar · ⌘I / Ctrl+I: AI chat · ↓/↑: scroll a little · ←/→: chapters · Esc: close popups
 const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
