@@ -780,16 +780,19 @@ function archiveCurrent() {
   const real = messages.filter((m) => m.role !== "assistant" || m.content);
   if (!real.some((m) => m.role === "assistant")) return;
   const firstQ = real.find((m) => m.role === "user") || {};
-  const title = (firstQ.quote ? `“${firstQ.quote}”` : firstQ.content || "Chat").slice(0, 80);
+  const named = store.get("chatTitle", ""); // a name the reader gave this chat earlier
+  const title = named || (firstQ.quote ? `“${firstQ.quote}”` : firstQ.content || "Chat").slice(0, 80);
   const history = store.get("chatHistory", []);
-  history.unshift({ id: Date.now(), at: new Date().toISOString(), title, ref: firstQ.ref || firstQ.chapterRef || "", messages: real });
+  history.unshift({ id: Date.now(), at: new Date().toISOString(), title, named: !!named, ref: firstQ.ref || firstQ.chapterRef || "", messages: real });
   store.set("chatHistory", history.slice(0, 50));
+  store.set("chatTitle", "");
 }
 $("newChatBtn").addEventListener("click", () => {
   if (busy) return;
   archiveCurrent();
   messages = [];
   store.set("messages", messages);
+  store.set("chatTitle", "");
   renderLog();
   markDiscussed();
   showHistory(false);
@@ -810,6 +813,7 @@ function renderHistory() {
             <span class="history-title">${esc(h.title)}</span>
             <span class="history-meta">${esc(h.ref)}${h.ref ? " · " : ""}${fmt(h.at)} · ${h.messages.filter((m) => m.role === "user").length} question${h.messages.filter((m) => m.role === "user").length === 1 ? "" : "s"}</span>
           </button>
+          <button class="history-rename" data-i="${i}" title="Rename" aria-label="Rename this chat">✎</button>
           <button class="history-del" data-i="${i}" title="Delete" aria-label="Delete this chat">×</button>
         </div>`).join("")
     : '<p class="history-empty">No past chats yet. When you start a new chat with +, the old one is saved here.</p>';
@@ -819,7 +823,10 @@ $("historyList").addEventListener("click", (e) => {
   const history = store.get("chatHistory", []);
   const del = e.target.closest(".history-del");
   const open = e.target.closest(".history-open");
-  if (del) {
+  const rename = e.target.closest(".history-rename");
+  if (rename) {
+    startRename(Number(rename.dataset.i));
+  } else if (del) {
     history.splice(Number(del.dataset.i), 1);
     store.set("chatHistory", history);
     renderHistory();
@@ -829,11 +836,49 @@ $("historyList").addEventListener("click", (e) => {
     archiveCurrent(); // keep whatever was open
     messages = chosen.messages;
     store.set("messages", messages);
+    store.set("chatTitle", chosen.named ? chosen.title : ""); // keeps its name when filed away again
     showHistory(false);
     renderLog();
     markDiscussed();
   }
 });
+// Swap a chat's title for a text box; Enter or clicking away saves, Escape cancels.
+function startRename(i) {
+  const item = $("historyList").querySelector(`.history-item[data-i="${i}"]`);
+  const history = store.get("chatHistory", []);
+  if (!item || !history[i]) return;
+  const box = document.createElement("input");
+  box.className = "history-input";
+  box.maxLength = 80;
+  box.value = history[i].title;
+  box.setAttribute("aria-label", "Chat name");
+  // An input can't live inside a button, so the button becomes a plain box while editing.
+  const btn = item.querySelector(".history-open");
+  const wrap = document.createElement("div");
+  wrap.className = "history-open editing";
+  wrap.append(box, btn.querySelector(".history-meta"));
+  btn.replaceWith(wrap);
+  box.focus();
+  box.select();
+  let done = false;
+  const finish = (save) => {
+    if (done) return;
+    done = true;
+    const name = box.value.trim();
+    if (save && name && name !== history[i].title) {
+      history[i] = { ...history[i], title: name, named: true };
+      store.set("chatHistory", history);
+    }
+    renderHistory();
+  };
+  box.addEventListener("keydown", (e) => {
+    e.stopPropagation(); // don't trigger reader shortcuts while typing
+    if (e.key === "Enter") { e.preventDefault(); finish(true); }
+    if (e.key === "Escape") { e.preventDefault(); finish(false); }
+  });
+  box.addEventListener("click", (e) => e.stopPropagation()); // don't open the chat
+  box.addEventListener("blur", () => finish(true));
+}
 
 $("composer").addEventListener("submit", (e) => {
   e.preventDefault();
@@ -1263,7 +1308,7 @@ function toast(text) {
 // ---------- Sign-in + sync (Supabase) ----------
 // Signed in as the owner, settings and chats sync across devices (table bible_state).
 // Signed out, everything stays in this browser only.
-const SYNC_KEYS = ["ref", "version", "textSize", "recents", "messages", "bible_name", "annotations", "chatHistory"];
+const SYNC_KEYS = ["ref", "version", "textSize", "recents", "messages", "bible_name", "annotations", "chatHistory", "chatTitle"];
 const SBC = window.SUPABASE_CONFIG;
 const sb = SBC && window.supabase ? window.supabase.createClient(SBC.url, SBC.anonKey) : null;
 const authReady = sb ? sb.auth.getSession() : Promise.resolve({ data: { session: null } }); // also reads a sign-in link's #access_token
@@ -1280,7 +1325,7 @@ async function pushSync() {
   if (!user) return;
   const { error } = await sb.from("bible_state").upsert({
     user_id: user.id,
-    state: { ref: store.get("ref", ref), version: store.get("version", version), textSize: store.get("textSize", DEFAULT_SIZE), name: store.get("bible_name", ""), annotations: store.get("annotations", {}), chatHistory: store.get("chatHistory", []), recents: store.get("recents", []) },
+    state: { ref: store.get("ref", ref), version: store.get("version", version), textSize: store.get("textSize", DEFAULT_SIZE), name: store.get("bible_name", ""), annotations: store.get("annotations", {}), chatHistory: store.get("chatHistory", []), chatTitle: store.get("chatTitle", ""), recents: store.get("recents", []) },
     messages: store.get("messages", []),
     updated_at: new Date(Number(store.get("localUpdatedAt", Date.now()))).toISOString(),
   });
@@ -1302,6 +1347,7 @@ async function pullSync() {
     if (st.name) localStorage.setItem("bible_name", JSON.stringify(String(st.name).slice(0, 40)));
     if (st.annotations && typeof st.annotations === "object") localStorage.setItem("annotations", JSON.stringify(st.annotations));
     if (Array.isArray(st.chatHistory)) localStorage.setItem("chatHistory", JSON.stringify(st.chatHistory));
+    if (typeof st.chatTitle === "string") localStorage.setItem("chatTitle", JSON.stringify(st.chatTitle.slice(0, 80)));
     if (st.recents) localStorage.setItem("recents", JSON.stringify(st.recents));
     localStorage.setItem("messages", JSON.stringify(data.messages || []));
     localStorage.setItem("localUpdatedAt", String(new Date(data.updated_at).getTime()));
@@ -1333,7 +1379,7 @@ $("signInForm").addEventListener("submit", async (e) => {
 $("signOutBtn").addEventListener("click", async () => {
   await sb.auth.signOut();
   // Clear this browser's copy of the synced data so the next person on this device starts fresh.
-  ["messages", "recents", "ref", "localUpdatedAt", "chatOpen", "annotations", "chatHistory"].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
+  ["messages", "recents", "ref", "localUpdatedAt", "chatOpen", "annotations", "chatHistory", "chatTitle"].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
   location.reload();
 });
 
