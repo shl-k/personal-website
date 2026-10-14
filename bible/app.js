@@ -453,6 +453,7 @@ function renderAnnotations() {
     mark.title = "Note";
     lastEl[endKey].after(mark);
   }
+  renderBookmark();
 }
 
 // Human label for a set of keys in a chapter: "John 3:16–17" or "John 3 · “Jesus and Nicodemus”"
@@ -501,6 +502,48 @@ $("noteBtn").addEventListener("click", () => {
   if (existing) openNote(existing, rect, { edit: true });
   else openNote(keys[0], rect, { edit: true, keys });
 });
+
+// ---------- Bookmark ----------
+// One bookmark, like a ribbon in a paper Bible: set it on a verse, jump back to it from the sidebar.
+const bookmarkVerse = (s) => (s?.verses || [])[0];
+$("bookmarkBtn").addEventListener("click", () => {
+  const v = bookmarkVerse(pendingSel);
+  if (!v) return;
+  hidePop();
+  window.getSelection().removeAllRanges();
+  const bm = store.get("bookmark", null);
+  if (bm && bm.ref === ref && bm.verse === v) { store.set("bookmark", null); toast("Bookmark removed"); }
+  else {
+    const el = chapterEl.querySelector(`.content[data-v="${v}"]`);
+    store.set("bookmark", { ref, verse: v, snip: (el?.textContent || "").trim().replace(/\s+/g, " ").slice(0, 60).trim(), at: Date.now() });
+    toast(`Bookmarked ${labelFor([String(v)])}`);
+  }
+  renderBookmark();
+});
+$("bookmarkGo").addEventListener("click", () => {
+  const bm = store.get("bookmark", null);
+  if (bm) goTo(bm.ref, bm.verse, [bm.verse]);
+});
+$("bookmarkDel").addEventListener("click", () => { store.set("bookmark", null); renderBookmark(); });
+
+function renderBookmark() {
+  const bm = store.get("bookmark", null);
+  const ok = bm && BOOKS[String(bm.ref).split(".")[0]];
+  $("bookmarkSection").hidden = !ok;
+  chapterEl.querySelectorAll(".bm-ribbon").forEach((r) => r.remove());
+  if (!ok) return;
+  $("bookmarkRef").textContent = labelFor([String(bm.verse)], bm.ref);
+  $("bookmarkSnip").textContent = bm.snip ? `“${bm.snip}…”` : "";
+  if (bm.ref === ref) {
+    const el = chapterEl.querySelector(`.content[data-v="${bm.verse}"]`);
+    if (el) {
+      const r = document.createElement("span");
+      r.className = "bm-ribbon in-text";
+      r.title = "Your bookmark";
+      el.before(r);
+    }
+  }
+}
 
 // Note card: hover shows it, click pins it (stays until closed), Edit/Delete inside.
 let noteState = { k: null, keys: [], pinned: false, hideTimer: null };
@@ -706,6 +749,9 @@ function showPop() {
   const cur = canMark ? annotationFor(keys[0]).color : null;
   selPop.querySelectorAll(".hl-dot").forEach((d) => d.classList.toggle("current", d.dataset.color === cur));
   $("hlClear").hidden = !keys.some((k) => annotationFor(k).color);
+  const bm = store.get("bookmark", null), bv = bookmarkVerse(s);
+  $("bookmarkBtn").hidden = !bv;
+  $("bookmarkLbl").innerHTML = bm && bm.ref === ref && bm.verse === bv ? "Remove <u>b</u>ookmark" : "<u>B</u>ookmark";
   selPop.hidden = false;
   const w = selPop.offsetWidth;
   const x = Math.min(Math.max(s.rect.left + s.rect.width / 2, w / 2 + 8), innerWidth - w / 2 - 8);
@@ -1308,7 +1354,7 @@ function toast(text) {
 // ---------- Sign-in + sync (Supabase) ----------
 // Signed in as the owner, settings and chats sync across devices (table bible_state).
 // Signed out, everything stays in this browser only.
-const SYNC_KEYS = ["ref", "version", "textSize", "recents", "messages", "bible_name", "annotations", "chatHistory", "chatTitle"];
+const SYNC_KEYS = ["ref", "version", "textSize", "recents", "messages", "bible_name", "annotations", "chatHistory", "chatTitle", "bookmark"];
 const SBC = window.SUPABASE_CONFIG;
 const sb = SBC && window.supabase ? window.supabase.createClient(SBC.url, SBC.anonKey) : null;
 const authReady = sb ? sb.auth.getSession() : Promise.resolve({ data: { session: null } }); // also reads a sign-in link's #access_token
@@ -1318,13 +1364,13 @@ let syncTimer = null;
 function scheduleSync() {
   if (!user) return;
   clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => syncNow().then((pulled) => pulled && applySynced()), 1200);
+  syncTimer = setTimeout(() => { syncTimer = null; syncAndShow(); }, 400);
 }
 
 const localState = () => ({
   ref: store.get("ref", ref), version: store.get("version", version), textSize: store.get("textSize", DEFAULT_SIZE),
   name: store.get("bible_name", ""), annotations: store.get("annotations", {}), chatHistory: store.get("chatHistory", []),
-  chatTitle: store.get("chatTitle", ""), recents: store.get("recents", []),
+  chatTitle: store.get("chatTitle", ""), recents: store.get("recents", []), bookmark: store.get("bookmark", null),
 });
 
 function writeLocal(st, msgs) {
@@ -1337,6 +1383,7 @@ function writeLocal(st, msgs) {
     if (Array.isArray(st.chatHistory)) localStorage.setItem("chatHistory", JSON.stringify(st.chatHistory));
     if (typeof st.chatTitle === "string") localStorage.setItem("chatTitle", JSON.stringify(st.chatTitle.slice(0, 80)));
     if (st.recents) localStorage.setItem("recents", JSON.stringify(st.recents));
+    if ("bookmark" in st) localStorage.setItem("bookmark", JSON.stringify(st.bookmark || null));
     localStorage.setItem("messages", JSON.stringify(msgs || []));
   } catch {}
 }
@@ -1361,7 +1408,8 @@ function mergeStates(cloudSt, cloudMsgs, mine, myMsgs) {
     }
   }
   chatHistory = chatHistory.slice(0, 50);
-  return { st: { ...cloudSt, ...mine, annotations, chatHistory, chatTitle: msgs === myMsgs ? mine.chatTitle : cloudSt.chatTitle || "" }, msgs };
+  const bookmark = [cloudSt.bookmark, mine.bookmark].filter(Boolean).sort((x, y) => (y.at || 0) - (x.at || 0))[0] || null;
+  return { st: { ...cloudSt, ...mine, annotations, chatHistory, bookmark, chatTitle: msgs === myMsgs ? mine.chatTitle : cloudSt.chatTitle || "" }, msgs };
 }
 
 // Compares this browser with the cloud copy. "cloudSeenAt" is the cloud version this browser last matched,
@@ -1412,15 +1460,26 @@ async function applySynced() {
   const cloudRef = store.get("ref", ref);
   if (cloudRef !== ref && BOOKS[cloudRef.split(".")[0]]) { ref = cloudRef; history.replaceState(null, "", "#" + ref); await loadChapter(); }
   else { renderAnnotations(); markDiscussed(); }
+  toast("Updated from your other device");
 }
 
-// Pick up what was done on another device when coming back to this tab, and every minute while it's open.
+const syncAndShow = () => syncNow().then((pulled) => pulled && applySynced());
+
+// Seamless across devices: the cloud tells this page the moment another device saves (Supabase Realtime),
+// and as a fallback we also check when the tab comes back into view and every minute while it's open.
+// Leaving the tab sends anything still waiting, so a phone locked right after a question still syncs.
+function listenForOtherDevices() {
+  if (!user || !sb) return;
+  sb.channel("bible_state_" + user.id)
+    .on("postgres_changes", { event: "*", schema: "public", table: "bible_state", filter: `user_id=eq.${user.id}` }, syncAndShow)
+    .subscribe((status) => { if (status === "SUBSCRIBED") syncAndShow(); }); // catch anything missed while connecting
+}
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState === "visible") syncNow().then((pulled) => pulled && applySynced());
+  if (document.visibilityState === "visible") syncAndShow();
+  else if (syncTimer) { clearTimeout(syncTimer); syncTimer = null; syncNow(); }
 });
-setInterval(() => {
-  if (document.visibilityState === "visible") syncNow().then((pulled) => pulled && applySynced());
-}, 60000);
+addEventListener("focus", syncAndShow);
+setInterval(() => { if (document.visibilityState === "visible") syncAndShow(); }, 60000);
 
 function renderAccount() {
   $("account").hidden = !sb; // anyone can sign in to save their chats across devices
@@ -1446,7 +1505,7 @@ $("signInForm").addEventListener("submit", async (e) => {
 $("signOutBtn").addEventListener("click", async () => {
   await sb.auth.signOut();
   // Clear this browser's copy of the synced data so the next person on this device starts fresh.
-  ["messages", "recents", "ref", "localUpdatedAt", "chatOpen", "annotations", "chatHistory", "chatTitle", "cloudSeenAt"].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
+  ["messages", "recents", "ref", "localUpdatedAt", "chatOpen", "annotations", "chatHistory", "chatTitle", "cloudSeenAt", "bookmark"].forEach((k) => { try { localStorage.removeItem(k); } catch {} });
   location.reload();
 });
 
@@ -1614,5 +1673,6 @@ setInterval(tickClock, 1000);
   if (firstVisit && ref === START_REF) scrollToSectionOf(START_VERSE);
   if (aiOn && store.get("chatOpen", false) && messages.length) openChat();
   booted = true;
+  listenForOtherDevices();
   if (user) toast("Synced");
 })();

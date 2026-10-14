@@ -152,3 +152,10 @@ alter table public.bible_events add column if not exists email text check (char_
 
 -- Migration (Oct 2026): also log prompt-cache writes so per-question cost is exact.
 alter table public.ai_usage add column if not exists cache_write_tokens integer;
+
+-- Live sync between a reader's devices: pages subscribe to their own bible_state row (RLS still applies).
+do $$ begin
+  if not exists (select 1 from pg_publication_tables where pubname = 'supabase_realtime' and tablename = 'bible_state') then
+    alter publication supabase_realtime add table public.bible_state;
+  end if;
+end $$;

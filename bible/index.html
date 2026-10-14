@@ -88,6 +88,14 @@
           <div class="chapter-grid" id="chapterGrid"></div>
         </div>
 
+        <div id="bookmarkSection" hidden>
+          <div class="nav-label">Bookmark</div>
+          <div class="bookmark-row">
+            <button class="bookmark-go" id="bookmarkGo"><span class="bm-ribbon" aria-hidden="true"></span><span class="bookmark-text"><span class="bookmark-ref" id="bookmarkRef"></span><span class="bookmark-snip" id="bookmarkSnip"></span></span></button>
+            <button class="history-del" id="bookmarkDel" title="Remove bookmark" aria-label="Remove bookmark">×</button>
+          </div>
+        </div>
+
         <div id="marksSection" hidden>
           <div class="nav-label">My notes &amp; highlights</div>
           <div class="marks-list" id="marksList"></div>
@@ -236,6 +244,7 @@
       <button class="hl-clear" id="hlClear" data-key="0" title="Remove highlight (0)" aria-label="Remove highlight"><svg viewBox="0 0 24 24" width="13" height="13"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" d="M6 6l12 12M18 6 6 18"/></svg></button>
       <span class="sel-divider"></span>
       <button id="noteBtn" data-key="n"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg><span class="lbl"><u>N</u>ote</span></button>
+      <button id="bookmarkBtn" data-key="b"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" d="M6 3h12v18l-6-5-6 5z"/></svg><span class="lbl" id="bookmarkLbl"><u>B</u>ookmark</span></button>
     </div>
     <div class="sel-group" id="saveGroup" hidden>
       <button id="saveSelBtn" data-key="n"><svg viewBox="0 0 24 24" width="14" height="14"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 20h4L19 9l-4-4L4 16zM14 6l4 4"/></svg><span class="lbl">Save to <u>n</u>ote</span></button>
