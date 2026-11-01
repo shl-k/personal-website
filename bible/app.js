@@ -247,6 +247,12 @@ async function loadChapter(verse, flash) {
   tagVerses();
   tagHeadings();
   renderAnnotations();
+  if (chapterEl.dataset.swipe) { // arrived by swiping: slide the new chapter in from that side
+    const cls = "swipe-in-" + chapterEl.dataset.swipe;
+    delete chapterEl.dataset.swipe;
+    chapterEl.classList.add(cls);
+    chapterEl.addEventListener("animationend", () => chapterEl.classList.remove(cls), { once: true });
+  }
   track("chapter_open", ref);
   $("copyright").textContent = chapter.copyright;
   markDiscussed();
@@ -418,7 +424,7 @@ function setAnnotation(keys, patch, r = ref) {
     const next = { ...(ch[key] || {}), ...patch };
     if (!next.color) delete next.color;
     if (!next.note) { delete next.note; delete next.with; }
-    if (next.color || next.note || next.noteOf) {
+    if (next.color || next.spans?.length || next.note || next.noteOf) {
       if (r === ref) next.snip = snippetFor(key) || next.snip || "";
       next.at = Date.now();
       ch[key] = next;
@@ -431,7 +437,10 @@ function setAnnotation(keys, patch, r = ref) {
 }
 function renderAnnotations() {
   chapterEl.querySelectorAll(".note-mark").forEach((m) => m.remove());
+  chapterEl.querySelectorAll("mark.hl").forEach((m) => m.replaceWith(...m.childNodes));
+  chapterEl.normalize();
   const ch = store.get("annotations", {})[ref] || {};
+  for (const [key, a] of Object.entries(ch)) if (a.spans?.length && !isHeadingKey(key)) wrapSpans(key, a.spans);
   const lastEl = {};
   const apply = (el, key) => {
     const a = ch[key] || {};
@@ -470,18 +479,132 @@ function labelFor(keys, r = ref, title = null) {
   return `${chTitle}:${a}${b !== a ? "–" + b : ""}`;
 }
 
+// ---------- Partial highlights ----------
+// A verse highlight covers characters [start, end) of the verse's text (all its .content pieces, in order),
+// stored as `spans: [[start, end, color], ...]`. Older whole-verse highlights use `color`; changing one
+// turns it into a span. Headings are always highlighted whole.
+function verseTextNodes(v) {
+  const nodes = [];
+  let off = 0;
+  chapterEl.querySelectorAll(`.content[data-v="${v}"]`).forEach((c) => {
+    const w = document.createTreeWalker(c, NodeFilter.SHOW_TEXT);
+    for (let n = w.nextNode(); n; n = w.nextNode()) { nodes.push([n, off]); off += n.nodeValue.length; }
+  });
+  return nodes;
+}
+const verseText = (v) => verseTextNodes(v).map(([n]) => n.nodeValue).join("");
+
+// Grow a selection to whole words (so a sloppy tap on a phone still highlights clean words), minus edge spaces.
+function snapToWords(text, s, e) {
+  const word = /[\p{L}\p{N}'’]/u;
+  while (s > 0 && word.test(text[s - 1]) && word.test(text[s])) s--;
+  while (e < text.length && word.test(text[e]) && word.test(text[e - 1])) e++;
+  return snapEdges(text, s, e);
+}
+// Drop spaces at either end of a highlight (left behind when part of one is cleared or recolored).
+function snapEdges(text, s, e) {
+  while (s < e && /\s/.test(text[s])) s++;
+  while (e > s && /\s/.test(text[e - 1])) e--;
+  return [s, e];
+}
+function selectionOffsets(range, verses) {
+  const out = {};
+  for (const v of verses) {
+    let s = Infinity, e = -1;
+    for (const [n, off] of verseTextNodes(v)) {
+      if (!range.intersectsNode(n)) continue;
+      const a = n === range.startContainer ? range.startOffset : 0;
+      const b = n === range.endContainer ? range.endOffset : n.nodeValue.length;
+      if (b > a) { s = Math.min(s, off + a); e = Math.max(e, off + b); }
+    }
+    if (e > s) out[v] = snapToWords(verseText(v), s, e);
+  }
+  return out;
+}
+function subtractSpan(spans, s, e) {
+  const out = [];
+  for (const [a, b, c] of spans) {
+    if (b <= s || a >= e) { out.push([a, b, c]); continue; }
+    if (a < s) out.push([a, s, c]);
+    if (b > e) out.push([e, b, c]);
+  }
+  return out;
+}
+function tidySpans(spans) {
+  const out = [];
+  for (const sp of spans.filter(([a, b]) => b > a).sort((x, y) => x[0] - y[0])) {
+    const last = out[out.length - 1];
+    if (last && last[2] === sp[2] && last[1] >= sp[0]) last[1] = Math.max(last[1], sp[1]);
+    else out.push([...sp]);
+  }
+  return out;
+}
+function wrapSpans(v, spans) {
+  for (const [n, off] of verseTextNodes(v)) {
+    const len = n.nodeValue.length;
+    const hits = spans.filter(([a, b]) => a < off + len && b > off).sort((x, y) => y[0] - x[0]);
+    for (const [a, b, color] of hits) { // right to left, so earlier offsets stay valid
+      const from = Math.max(a, off) - off, to = Math.min(b, off + len) - off;
+      if (to < n.nodeValue.length) n.splitText(to);
+      const mid = from > 0 ? n.splitText(from) : n;
+      const mark = document.createElement("mark");
+      mark.className = "hl";
+      mark.dataset.hl = color;
+      mid.replaceWith(mark);
+      mark.append(mid);
+    }
+  }
+}
+// Color (or with null, clear) exactly the selected words.
+function paintSelection(sel, color) {
+  if (sel.headingKeys?.length) setAnnotation(sel.headingKeys, { color });
+  if (!sel.verses?.length) return;
+  const all = store.get("annotations", {});
+  const ch = all[ref] || {};
+  for (const v of sel.verses) {
+    const k = String(v), text = verseText(v);
+    const [s, e] = sel.offsets?.[v] || [0, text.length];
+    const a = { ...(ch[k] || {}) };
+    let spans = a.color ? [[0, text.length, a.color]] : a.spans || [];
+    delete a.color;
+    spans = subtractSpan(spans, s, e);
+    if (color) spans.push([s, e, color]);
+    spans = tidySpans(spans).map(([x, y, c]) => [...snapEdges(text, x, y), c]).filter(([x, y]) => y > x);
+    if (spans.length) a.spans = spans; else delete a.spans;
+    if (a.spans || a.note || a.noteOf) {
+      a.snip = a.spans ? text.slice(a.spans[0][0], a.spans[0][1]).replace(/\s+/g, " ").trim().slice(0, 60) : snippetFor(k) || a.snip || "";
+      a.at = Date.now();
+      ch[k] = a;
+    } else delete ch[k];
+  }
+  if (Object.keys(ch).length) all[ref] = ch; else delete all[ref];
+  store.set("annotations", all);
+  renderAnnotations();
+  renderMarksList();
+}
+// The highlight color under a selection (to mark the current dot), and whether there's any to clear.
+function colorsUnder(sel) {
+  const found = [];
+  for (const k of sel.headingKeys || []) if (annotationFor(k).color) found.push(annotationFor(k).color);
+  for (const v of sel.verses || []) {
+    const a = annotationFor(String(v));
+    if (a.color) found.push(a.color);
+    const [s, e] = sel.offsets?.[v] || [0, Infinity];
+    for (const [x, y, c] of a.spans || []) if (x < e && y > s) found.push(c);
+  }
+  return found;
+}
+
 const selKeys = (s) => [...(s?.headingKeys || []), ...(s?.verses || []).map(String)];
 selPop.querySelectorAll(".hl-dot").forEach((d) => d.addEventListener("click", () => {
-  const keys = selKeys(pendingSel);
-  if (!keys.length) return;
-  setAnnotation(keys, { color: d.dataset.color });
+  if (!selKeys(pendingSel).length) return;
+  paintSelection(pendingSel, d.dataset.color);
   hidePop();
   window.getSelection().removeAllRanges();
 }));
 $("hlClear").addEventListener("click", () => {
-  const keys = selKeys(pendingSel);
-  if (!keys.length) return;
-  setAnnotation(keys, { color: null });
+  if (!selKeys(pendingSel).length) return;
+  paintSelection(pendingSel, null);
   hidePop();
   window.getSelection().removeAllRanges();
 });
@@ -632,13 +755,14 @@ function renderMarksList() {
   const items = [];
   for (const [r, ch] of Object.entries(all)) {
     if (!BOOKS[r.split(".")[0]]) continue;
-    for (const [k, a] of Object.entries(ch)) if (a.note || a.color) items.push({ r, k, a: { ...a, range: [k, ...(a.with || [])] } });
+    for (const [k, a] of Object.entries(ch)) if (a.note || a.color || a.spans?.length) items.push({ r, k, a: { ...a, range: [k, ...(a.with || [])] } });
   }
   items.sort((x, y) => (y.a.at || 0) - (x.a.at || 0));
   $("marksSection").hidden = !items.length;
   const shown = marksShowAll ? items : items.slice(0, 4);
   $("marksList").innerHTML = shown.map(({ r, k, a }) => {
-    const icon = a.color ? `<span class="mark-swatch" data-hl="${esc(a.color)}"></span>` : "";
+    const swatch = a.color || a.spans?.[0]?.[2];
+    const icon = swatch ? `<span class="mark-swatch" data-hl="${esc(swatch)}"></span>` : "";
     const pen = a.note ? `<span class="mark-pen">✎</span>` : "";
     const preview = a.note ? a.note.replace(/\s+/g, " ").slice(0, 70) : (a.snip || "");
     return `<button class="mark-item" data-r="${esc(r)}" data-k="${esc(k)}">
@@ -726,7 +850,8 @@ function readSelection() {
     const ai = (range.commonAncestorContainer.nodeType === 1 ? range.commonAncestorContainer : range.commonAncestorContainer.parentElement).closest(".msg-ai");
     if (ai) noteTarget = noteTargetFor(Number(ai.dataset.idx));
   }
-  return { text, verses, headingKeys, ref: refFor(verses), rect: range.getBoundingClientRect(), noteTarget };
+  const offsets = inChapter ? selectionOffsets(range, verses) : {};
+  return { text, verses, headingKeys, offsets, ref: refFor(verses), rect: range.getBoundingClientRect(), noteTarget };
 }
 
 function refFor(verses) {
@@ -746,9 +871,9 @@ function showPop() {
   $("markGroup").hidden = !canMark;
   $("aiGroup").hidden = !aiOn;
   $("aiDivider").hidden = !(aiOn && (canMark || s.noteTarget));
-  const cur = canMark ? annotationFor(keys[0]).color : null;
-  selPop.querySelectorAll(".hl-dot").forEach((d) => d.classList.toggle("current", d.dataset.color === cur));
-  $("hlClear").hidden = !keys.some((k) => annotationFor(k).color);
+  const under = canMark ? colorsUnder(s) : [];
+  selPop.querySelectorAll(".hl-dot").forEach((d) => d.classList.toggle("current", d.dataset.color === under[0]));
+  $("hlClear").hidden = !under.length;
   const bm = store.get("bookmark", null), bv = bookmarkVerse(s);
   $("bookmarkBtn").hidden = !bv;
   $("bookmarkLbl").innerHTML = bm && bm.ref === ref && bm.verse === bv ? "Remove <u>b</u>ookmark" : "<u>B</u>ookmark";
@@ -1226,6 +1351,31 @@ $("expandBtn").addEventListener("click", () => {
 });
 $("prevBtn").addEventListener("click", () => { const r = stepRef(ref, -1); if (r) goTo(r); });
 $("nextBtn").addEventListener("click", () => { const r = stepRef(ref, 1); if (r) goTo(r); });
+
+// Phones: swipe left for the next chapter, right for the previous one.
+// Ignored while selecting text, for mostly-vertical drags, and near the screen edges (the browser's back gesture).
+{
+  let start = null;
+  const reader = $("readerScroll");
+  reader.addEventListener("touchstart", (e) => {
+    const p = e.touches[0];
+    start = e.touches.length === 1 && p.clientX > 24 && p.clientX < innerWidth - 24
+      ? { x: p.clientX, y: p.clientY, t: Date.now(), selecting: !window.getSelection().isCollapsed }
+      : null;
+  }, { passive: true });
+  reader.addEventListener("touchend", (e) => {
+    const s = start;
+    start = null;
+    if (!s || s.selecting || !window.getSelection().isCollapsed) return;
+    const p = e.changedTouches[0];
+    const dx = p.clientX - s.x, dy = p.clientY - s.y;
+    if (Math.abs(dx) < 70 || Math.abs(dx) < Math.abs(dy) * 2 || Date.now() - s.t > 700) return;
+    const r = stepRef(ref, dx < 0 ? 1 : -1);
+    if (!r) return;
+    chapterEl.dataset.swipe = dx < 0 ? "next" : "prev";
+    goTo(r);
+  }, { passive: true });
+}
 // ---------- Resizable sidebar and chat ----------
 // Drag the handle on the sidebar's right edge or the chat's left edge; double-click resets.
 // Widths are remembered in this browser (they're about this screen, so they don't sync).

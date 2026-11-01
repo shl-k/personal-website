@@ -459,6 +459,12 @@ svg { display: block; }
 .scripture .content[data-hl="sage"]  { background: linear-gradient(180deg, transparent 38%, var(--hl-sage) 38%, var(--hl-sage) 92%, transparent 92%); }
 .scripture .content[data-hl="sky"]   { background: linear-gradient(180deg, transparent 38%, var(--hl-sky) 38%, var(--hl-sky) 92%, transparent 92%); }
 .scripture .content[data-hl="rose"]  { background: linear-gradient(180deg, transparent 38%, var(--hl-rose) 38%, var(--hl-rose) 92%, transparent 92%); }
+/* Partial highlights: just the selected words */
+.scripture mark.hl { background: none; color: inherit; -webkit-box-decoration-break: clone; box-decoration-break: clone; padding: 0 1px; border-radius: 2px; }
+.scripture mark.hl[data-hl="honey"] { background: linear-gradient(180deg, transparent 38%, var(--hl-honey) 38%, var(--hl-honey) 92%, transparent 92%); }
+.scripture mark.hl[data-hl="sage"]  { background: linear-gradient(180deg, transparent 38%, var(--hl-sage) 38%, var(--hl-sage) 92%, transparent 92%); }
+.scripture mark.hl[data-hl="sky"]   { background: linear-gradient(180deg, transparent 38%, var(--hl-sky) 38%, var(--hl-sky) 92%, transparent 92%); }
+.scripture mark.hl[data-hl="rose"]  { background: linear-gradient(180deg, transparent 38%, var(--hl-rose) 38%, var(--hl-rose) 92%, transparent 92%); }
 .scripture .content.has-note { text-decoration: underline dotted #555; text-decoration-thickness: 1px; text-underline-offset: 5px; cursor: pointer; }
 .note-mark {
   display: inline-grid; place-items: center; width: 1.25em; height: 1.25em; margin: 0 2px 0 3px;
@@ -611,3 +617,19 @@ svg { display: block; }
 .app.resizing, .app.resizing * { cursor: col-resize !important; user-select: none !important; }
 .app.resizing .sidebar, .app.resizing .chat-pane { transition: none !important; }
 @media (max-width: 760px) { .resizer { display: none; } }
+
+/* Swipe between chapters (phones) */
+@keyframes swipe-in-next { from { transform: translateX(36px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes swipe-in-prev { from { transform: translateX(-36px); opacity: 0; } to { transform: none; opacity: 1; } }
+.scripture.swipe-in-next { animation: swipe-in-next .22s ease-out; }
+.scripture.swipe-in-prev { animation: swipe-in-prev .22s ease-out; }
+
+/* Touch screens: the phone's own Copy/Look Up menu sits right above a selection, so the toolbar docks at the bottom instead */
+@media (hover: none) and (pointer: coarse) {
+  .sel-pop {
+    top: auto !important; left: 50% !important; bottom: calc(14px + env(safe-area-inset-bottom));
+    transform: translateX(-50%); width: max-content; max-width: calc(100vw - 16px);
+  }
+  .sel-pop::after { display: none; }
+  .sel-pop button { padding: 9px 10px; }
+}
